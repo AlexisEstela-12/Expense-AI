@@ -31,6 +31,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import FinancialChat from "./components/FinancialChat.jsx";
+import Notifications from "./components/Notifications.jsx";
 const API = "http://127.0.0.1:8000",
   today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
@@ -1986,58 +1987,7 @@ function App() {
             </div>
           )}
           {page === "Notificaciones" && (
-            <section className="panel">
-              <h2>Centro de notificaciones</h2>
-
-              <p className="muted">
-                Aquí encontrarás alertas sobre tus pagos, presupuestos y
-                reembolsos pendientes.
-              </p>
-
-              {notifications.length ? (
-                notifications.map((notification, index) => (
-                  <div
-                    className="alert-item"
-                    key={`${notification.type}-${notification.date}-${index}`}
-                  >
-                    <span
-                      className={
-                        notification.level === "danger"
-                          ? "alert-icon critical"
-                          : notification.level === "warning"
-                            ? "alert-icon caution"
-                            : "alert-icon"
-                      }
-                    >
-                      !
-                    </span>
-
-                    <div>
-                      <strong>{notification.title}</strong>
-
-                      <p>{notification.message}</p>
-
-                      <span className="muted">
-                        {notification.type === "recurring_payment"
-                          ? "Pago recurrente"
-                          : notification.type === "budget"
-                            ? "Presupuesto"
-                            : notification.type === "reimbursement"
-                              ? "Reembolso"
-                              : "Notificación"}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="empty">No tienes notificaciones activas.</p>
-              )}
-
-              <p className="muted">
-                Por ahora las alertas se muestran dentro de la aplicación; las
-                notificaciones externas llegarán en otra fase.
-              </p>
-            </section>
+            <Notifications notifications={notifications} />
           )}
           <div hidden={page !== "Asistente IA"}>
             <FinancialChat api={API} />
