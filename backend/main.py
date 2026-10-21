@@ -1,137 +1,30 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from enum import Enum
-from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Date, Numeric, ForeignKey, select
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from dateutil.relativedelta import relativedelta
 if __package__:
+    from .db.base import Base
+    from .db.models import Movement, Exchange, Budget, Category, Reimbursement, RecurringPayment, SavingsGoal, SavingsContribution
+    from .db.session import connection_string, DB_URL, engine, SessionLocal
     from .chat.balances import BalanceChatRequest, BalanceChatResponse, explain_balances, is_balance_question
     from .services.financial_queries import get_balances
     from .chat.tool_balances import ToolBalanceRequest, ToolBalanceResponse, run_tool_balances
     from .chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
+    from db.base import Base
+    from db.models import Movement, Exchange, Budget, Category, Reimbursement, RecurringPayment, SavingsGoal, SavingsContribution
+    from db.session import connection_string, DB_URL, engine, SessionLocal
     from chat.balances import BalanceChatRequest, BalanceChatResponse, explain_balances, is_balance_question
     from services.financial_queries import get_balances
     from chat.tool_balances import ToolBalanceRequest, ToolBalanceResponse, run_tool_balances
     from chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
-import os
-from urllib.parse import quote_plus
-from dotenv import load_dotenv
-
-load_dotenv(Path(__file__).with_name(".env"))
-
-connection_string = (
-    "DRIVER={ODBC Driver 18 for SQL Server};"
-    f"SERVER=tcp:{os.environ['DB_SERVER']},1433;"
-    f"DATABASE={os.environ['DB_NAME']};"
-    f"UID={os.environ['DB_USER']};"
-    f"PWD={os.environ['DB_PASSWORD']};"
-    "Encrypt=yes;"
-    "TrustServerCertificate=no;"
-    "Connection Timeout=30;"
-)
-
-DB_URL = "mssql+pyodbc:///?odbc_connect=" + quote_plus(connection_string)
-
-engine = create_engine(DB_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine)
-
-class Base(DeclarativeBase): pass
-class Movement(Base):
-    __tablename__ = 'movements'
-    id = Column(Integer, primary_key=True)
-    date = Column(Date, nullable=False)
-    kind = Column(String(24), nullable=False)
-    currency = Column(String(3), nullable=False)
-    amount = Column(Numeric(16, 2), nullable=False)
-    category = Column(String(80), nullable=False)
-    description = Column(String(255), default='')
-    exchange_id = Column(Integer, ForeignKey('exchanges.id'), nullable=True)
-class Exchange(Base):
-    __tablename__ = 'exchanges'
-    id = Column(Integer, primary_key=True)
-    date = Column(Date, nullable=False)
-    from_currency = Column(String(3), nullable=False)
-    amount_out = Column(Numeric(16, 2), nullable=False)
-    amount_in = Column(Numeric(16, 2), nullable=False)
-    rate = Column(Numeric(16, 6), nullable=False)
-class Budget(Base):
-    __tablename__ = 'budgets'
-    id = Column(Integer, primary_key=True)
-    month = Column(String(7), nullable=False)
-    category = Column(String(80), nullable=False)
-    currency = Column(String(3), nullable=False)
-    limit_amount = Column(Numeric(16, 2), nullable=False)
-class Category(Base):
-    __tablename__ = 'categories'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(80), nullable=False)
-    kind = Column(String(24), nullable=False)
-
-class Reimbursement(Base):
-    __tablename__ = 'reimbursements'
-    id = Column(Integer, primary_key=True)
-    date = Column(Date, nullable=False)
-    currency = Column(String(3), nullable=False)
-    amount = Column(Numeric(16, 2), nullable=False)
-    category = Column(String(80), nullable=False)
-    description = Column(String(255), default='')
-    status = Column(String(20), nullable=False, default='pending')
-    reimbursed_date = Column(Date, nullable=True)
-
-    movement_id = Column(
-        Integer,
-        ForeignKey('movements.id'),
-        nullable=False
-    )
-
-    reimbursement_movement_id = Column(
-        Integer,
-        ForeignKey('movements.id'),
-        nullable=True
-    )
-    
-class RecurringPayment(Base):
-    __tablename__ = 'recurring_payments'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    category = Column(String(80), nullable=False)
-    currency = Column(String(3), nullable=False)
-    amount = Column(Numeric(16, 2), nullable=False)
-    frequency = Column(String(20), nullable=False)
-    next_payment_date = Column(Date, nullable=False)
-    active = Column(Integer, nullable=False, default=1)
-
-class SavingsGoal(Base):
-    __tablename__ = 'savings_goals'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    currency = Column(String(3), nullable=False)
-    target_amount = Column(Numeric(16, 2), nullable=False)
-    target_date = Column(Date, nullable=True)
-    active = Column(Integer, nullable=False, default=1)
-    
- 
-class SavingsContribution(Base):
-    __tablename__ = 'savings_contributions'
-
-    id = Column(Integer, primary_key=True)
-    goal_id = Column(
-        Integer,
-        ForeignKey('savings_goals.id'),
-        nullable=False
-    )
-    date = Column(Date, nullable=False)
-    amount = Column(Numeric(16, 2), nullable=False)
-        
 Base.metadata.create_all(engine)
 
 app = FastAPI(title='Expense AI API', version='0.1.0')
