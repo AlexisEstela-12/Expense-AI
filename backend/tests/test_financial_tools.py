@@ -842,10 +842,12 @@ class OrchestrationTests(OfflineTest):
 class EndpointTests(OfflineTest):
     def setUp(self):
         super().setUp()
-        # Extract only the new function. Never import or execute main.py.
-        source = Path(__file__).resolve().parents[1] / 'main.py'
+        # Extract only the route function. Never import or execute main.py.
+        source = Path(__file__).resolve().parents[1] / 'api' / 'routers' / 'chat.py'
         tree = ast.parse(source.read_text(encoding='utf-8'))
-        node = next(item for item in tree.body if isinstance(item, ast.FunctionDef)
+        factory = next(item for item in tree.body if isinstance(item, ast.FunctionDef)
+                       and item.name == 'create_router')
+        node = next(item for item in factory.body if isinstance(item, ast.FunctionDef)
                     and item.name == 'chat_financial_tools')
         node.decorator_list = []
         self.orchestrator = MagicMock(return_value='ok')
