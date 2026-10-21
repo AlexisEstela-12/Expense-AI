@@ -39,6 +39,12 @@ import {
   getSavingsGoals,
   getNotifications,
 } from "./api/resources.js";
+import {
+  createReimbursementRequest,
+  completeReimbursementRequest,
+  createRecurringPaymentRequest,
+  payRecurringPaymentRequest,
+} from "./api/resources.js";
 const today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
 const money = (n, c = "PEN") =>
@@ -191,15 +197,9 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/reimbursements`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...reimbursementForm,
-          amount: Number(reimbursementForm.amount),
-        }),
+      const response = await createReimbursementRequest({
+        ...reimbursementForm,
+        amount: Number(reimbursementForm.amount),
       });
 
       const data = await response.json();
@@ -242,14 +242,8 @@ function App() {
     }
 
     try {
-      const response = await fetch(`${API}/reimbursements/${id}/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: reimbursementDate,
-        }),
+      const response = await completeReimbursementRequest(id, {
+        date: reimbursementDate,
       });
 
       const data = await response.json();
@@ -277,15 +271,9 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/recurring-payments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...recurringForm,
-          amount: Number(recurringForm.amount),
-        }),
+      const response = await createRecurringPaymentRequest({
+        ...recurringForm,
+        amount: Number(recurringForm.amount),
       });
 
       const data = await response.json();
@@ -329,14 +317,8 @@ function App() {
     }
 
     try {
-      const response = await fetch(`${API}/recurring-payments/${id}/pay`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: paymentDate,
-        }),
+      const response = await payRecurringPaymentRequest(id, {
+        date: paymentDate,
       });
 
       const data = await response.json();

@@ -12,3 +12,11 @@ export const getNotifications = () => get("notifications");
 export const createMovement = (payload) => postJson("movements", payload);
 export const createExchange = (payload) => postJson("exchanges", payload);
 export const createBudget = (payload) => postJson("budgets", payload);
+export const createReimbursementRequest = (payload) =>
+  postJson("reimbursements", payload);
+export const completeReimbursementRequest = (id, payload) =>
+  postJson(`reimbursements/${id}/complete`, payload);
+export const createRecurringPaymentRequest = (payload) =>
+  postJson("recurring-payments", payload);
+export const payRecurringPaymentRequest = (id, payload) =>
+  postJson(`recurring-payments/${id}/pay`, payload);
