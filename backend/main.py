@@ -12,6 +12,7 @@ if __package__:
     from .api.routers.movements import create_router as create_movements_router
     from .api.routers.exchanges import create_router as create_exchanges_router
     from .api.routers.recurring_payments import create_router as create_recurring_payments_router
+    from .api.routers.financial_summary import create_router as create_financial_summary_router
     from .api.routers.notifications import create_router as create_notifications_router
     from .api.routers.savings_goals import create_router as create_savings_goals_router
     from .schemas.common import Money
@@ -32,6 +33,7 @@ else:
     from api.routers.movements import create_router as create_movements_router
     from api.routers.exchanges import create_router as create_exchanges_router
     from api.routers.recurring_payments import create_router as create_recurring_payments_router
+    from api.routers.financial_summary import create_router as create_financial_summary_router
     from api.routers.notifications import create_router as create_notifications_router
     from api.routers.savings_goals import create_router as create_savings_goals_router
     from schemas.common import Money
@@ -78,26 +80,7 @@ DEFAULT_CATEGORIES = {
         'Reembolso laboral'
     ]
 }
-@app.get('/summary')
-def summary(session: Session = Depends(db)):
-    totals = available(session)
-    reserved = reserved_savings(session)
-    spendable = spendable_balance(session)
-
-    return {
-        'balances': {
-            k: str(v)
-            for k, v in totals.items()
-        },
-        'reserved': {
-            k: str(v)
-            for k, v in reserved.items()
-        },
-        'spendable': {
-            k: str(v)
-            for k, v in spendable.items()
-        }
-    }
+app.include_router(create_financial_summary_router(db))
 
 @app.post('/api/chat/balances', response_model=BalanceChatResponse)
 def chat_balances(
