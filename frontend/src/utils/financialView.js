@@ -64,3 +64,18 @@ export const calculateMonthly = (movements, month) => {
   }
   return a;
 };
+
+export const filterCurrentBudgets = (budgets, month) =>
+  budgets.filter((b) => b.month === month);
+
+export const calculateAlerts = (currentBudgets) =>
+  currentBudgets
+    .filter((b) => b.alert > 0)
+    .sort((a, b) => b.percentage - a.percentage);
+
+export const filterVisibleMovements = (movements, page, month) => {
+  const inMonth = (m) => m.date?.startsWith(month);
+  return movements
+    .filter((m) => (page === "Dashboard" ? inMonth(m) : true))
+    .slice(0, page === "Dashboard" ? 10 : 100);
+};

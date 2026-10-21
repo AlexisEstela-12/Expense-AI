@@ -34,6 +34,9 @@ import {
   movementTotals,
   calculateCategoryData,
   calculateMonthly,
+  filterCurrentBudgets,
+  calculateAlerts,
+  filterVisibleMovements,
 } from "./utils/financialView.js";
 import { API } from "./api/client.js";
 import { createMovement, createExchange, createBudget } from "./api/resources.js";
@@ -488,7 +491,6 @@ function App() {
     }
   }
 
-  const inMonth = (m) => m.date?.startsWith(month);
   const { expenses, income, reimbursements } = filterMonthlyMovements(
     movements,
     month,
@@ -499,10 +501,8 @@ function App() {
   );
   const categoryData = calculateCategoryData(expenses);
   const monthly = useMemo(() => calculateMonthly(movements, month), [movements, month]);
-  const currentBudgets = budgets.filter((b) => b.month === month),
-    alerts = currentBudgets
-      .filter((b) => b.alert > 0)
-      .sort((a, b) => b.percentage - a.percentage);
+  const currentBudgets = filterCurrentBudgets(budgets, month),
+    alerts = calculateAlerts(currentBudgets);
 
   const createNewCategory = async () => {
     const name = newCategory.trim();
@@ -572,9 +572,7 @@ function App() {
       monthLabel={monthLabel}
     />
   );
-  const visibleMovements = movements
-    .filter((m) => (page === "Dashboard" ? inMonth(m) : true))
-    .slice(0, page === "Dashboard" ? 10 : 100);
+  const visibleMovements = filterVisibleMovements(movements, page, month);
   const table = (
     <MovementsTable
       visibleMovements={visibleMovements}
