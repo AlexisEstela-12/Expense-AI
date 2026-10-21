@@ -17,6 +17,7 @@ import {
 import FinancialChat from "./components/FinancialChat.jsx";
 import Notifications from "./components/Notifications.jsx";
 import BudgetList from "./components/BudgetList.jsx";
+import MovementsTable from "./components/MovementsTable.jsx";
 import Reports from "./pages/Reports.jsx";
 import SettingsPage from "./pages/Settings.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -645,52 +646,15 @@ function App() {
       monthLabel={monthLabel}
     />
   );
+  const visibleMovements = movements
+    .filter((m) => (page === "Dashboard" ? inMonth(m) : true))
+    .slice(0, page === "Dashboard" ? 10 : 100);
   const table = (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Categoría</th>
-            <th>Descripción</th>
-            <th>Moneda</th>
-            <th>Monto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {movements
-            .filter((m) => (page === "Dashboard" ? inMonth(m) : true))
-            .slice(0, page === "Dashboard" ? 10 : 100)
-            .map((m) => (
-              <tr key={m.id}>
-                <td>{m.date}</td>
-                <td>
-                  <span className={`type ${m.kind}`}>
-                    {m.category === "Cambio de divisas"
-                      ? "↔ Cambio"
-                      : m.kind === "income"
-                        ? "↓ Ingreso"
-                        : m.kind === "expense"
-                          ? "↑ Gasto"
-                          : "↓ Reembolso"}
-                  </span>
-                </td>
-                <td>{m.category}</td>
-                <td>{m.description || "—"}</td>
-                <td>{m.currency}</td>
-                <td className={m.kind === "expense" ? "negative" : "positive"}>
-                  {m.kind === "expense" ? "− " : "+ "}
-                  {money(m.amount, m.currency)}
-                </td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
-      {!movements.length && (
-        <p className="empty">Registra tu primer movimiento para comenzar.</p>
-      )}
-    </div>
+    <MovementsTable
+      visibleMovements={visibleMovements}
+      hasMovements={movements.length > 0}
+      money={money}
+    />
   );
   return (
     <div className="app">
