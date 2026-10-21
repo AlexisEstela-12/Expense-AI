@@ -33,6 +33,7 @@ import {
 import FinancialChat from "./components/FinancialChat.jsx";
 import Notifications from "./components/Notifications.jsx";
 import Reports from "./pages/Reports.jsx";
+import SettingsPage from "./pages/Settings.jsx";
 const API = "http://127.0.0.1:8000",
   today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
@@ -1960,16 +1961,7 @@ function App() {
             <FinancialChat api={API} />
           </div>
           {page === "Configuración" && (
-            <section className="panel">
-              <h2>Configuración</h2>
-              <p className="muted">
-                Versión local de desarrollo. No publiques esta aplicación en
-                Internet sin autenticación y HTTPS.
-              </p>
-              <button className="secondary" onClick={load}>
-                Actualizar datos
-              </button>
-            </section>
+            <SettingsPage onRefresh={load} />
           )}
         </main>
       </div>
