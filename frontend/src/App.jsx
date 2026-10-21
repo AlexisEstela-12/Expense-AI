@@ -27,8 +27,9 @@ import SavingsGoals from "./pages/SavingsGoals.jsx";
 import RecurringPayments from "./pages/RecurringPayments.jsx";
 import Reimbursements from "./pages/Reimbursements.jsx";
 import Exchanges from "./pages/Exchanges.jsx";
-const API = "http://127.0.0.1:8000",
-  today = new Date().toLocaleDateString("en-CA"),
+import { API } from "./api/client.js";
+import { createMovement, createExchange, createBudget } from "./api/resources.js";
+const today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
 const money = (n, c = "PEN") =>
   new Intl.NumberFormat("es-PE", {
@@ -155,15 +156,11 @@ function App() {
   useEffect(() => {
     load();
   }, []);
-  const send = async (path, payload, reset) => {
+  const send = async (request, payload, reset) => {
     setError("");
     setNotice("");
     try {
-      const r = await fetch(`${API}/${path}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }),
+      const r = await request(payload),
         data = await r.json();
       if (!r.ok)
         throw Error(
@@ -624,19 +621,19 @@ function App() {
   };
   const submitMovement = (e) => {
     e.preventDefault();
-    send("movements", form, () =>
+    send(createMovement, form, () =>
       setForm({ ...form, amount: "", description: "" }),
     );
   };
   const submitExchange = (e) => {
     e.preventDefault();
-    send("exchanges", fx, () =>
+    send(createExchange, fx, () =>
       setFx({ ...fx, amount_out: "", amount_in: "" }),
     );
   };
   const submitBudget = (e) => {
     e.preventDefault();
-    send("budgets", budget, () => setBudget({ ...budget, limit_amount: "" }));
+    send(createBudget, budget, () => setBudget({ ...budget, limit_amount: "" }));
   };
   const budgetList = (
     <BudgetList
