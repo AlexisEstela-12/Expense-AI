@@ -26,3 +26,41 @@ export const movementTotals = (expenses, income) => {
     incomeUsd = sum(income, "USD");
   return { expensePen, expenseUsd, incomePen, incomeUsd };
 };
+
+export const calculateCategoryData = (expenses) =>
+  Object.values(
+    expenses
+      .filter((m) => m.currency === "PEN")
+      .reduce((a, m) => {
+        a[m.category] ??= { name: m.category, value: 0 };
+        a[m.category].value += Number(m.amount);
+        return a;
+      }, {}),
+  ).sort((a, b) => b.value - a.value);
+
+export const calculateMonthly = (movements, month) => {
+  const a = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(
+        Number(month.slice(0, 4)),
+        Number(month.slice(5)) - 1 - i,
+        1,
+      ),
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const group = movements.filter(
+      (m) => m.date.startsWith(key) && ordinary(m),
+    );
+    a.push({
+      name: d.toLocaleDateString("es-PE", { month: "short" }),
+      Ingresos: sum(
+        group.filter((m) => m.kind === "income"),
+        "PEN",
+      ),
+      Gastos: sum(
+        group.filter((m) => m.kind === "expense"),
+        "PEN",
+      ),
+    });
+  }
+  return a;
+};

@@ -32,6 +32,8 @@ import {
   sum,
   filterMonthlyMovements,
   movementTotals,
+  calculateCategoryData,
+  calculateMonthly,
 } from "./utils/financialView.js";
 import { API } from "./api/client.js";
 import { createMovement, createExchange, createBudget } from "./api/resources.js";
@@ -495,41 +497,8 @@ function App() {
     expenses,
     income,
   );
-  const categoryData = Object.values(
-    expenses
-      .filter((m) => m.currency === "PEN")
-      .reduce((a, m) => {
-        a[m.category] ??= { name: m.category, value: 0 };
-        a[m.category].value += Number(m.amount);
-        return a;
-      }, {}),
-  ).sort((a, b) => b.value - a.value);
-  const monthly = useMemo(() => {
-    const a = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(
-          Number(month.slice(0, 4)),
-          Number(month.slice(5)) - 1 - i,
-          1,
-        ),
-        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const group = movements.filter(
-        (m) => m.date.startsWith(key) && ordinary(m),
-      );
-      a.push({
-        name: d.toLocaleDateString("es-PE", { month: "short" }),
-        Ingresos: sum(
-          group.filter((m) => m.kind === "income"),
-          "PEN",
-        ),
-        Gastos: sum(
-          group.filter((m) => m.kind === "expense"),
-          "PEN",
-        ),
-      });
-    }
-    return a;
-  }, [movements, month]);
+  const categoryData = calculateCategoryData(expenses);
+  const monthly = useMemo(() => calculateMonthly(movements, month), [movements, month]);
   const currentBudgets = budgets.filter((b) => b.month === month),
     alerts = currentBudgets
       .filter((b) => b.alert > 0)
