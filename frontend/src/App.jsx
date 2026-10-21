@@ -636,66 +636,6 @@ function App() {
     e.preventDefault();
     send("budgets", budget, () => setBudget({ ...budget, limit_amount: "" }));
   };
-  const budgetForm = (
-    <form onSubmit={submitBudget} className="form-grid">
-      <label>
-        Mes
-        <input
-          required
-          type="month"
-          value={budget.month}
-          onChange={(e) => setBudget({ ...budget, month: e.target.value })}
-        />
-      </label>
-      <label>
-        Categoría
-        <select
-          required
-          value={budget.category}
-          onChange={(e) =>
-            setBudget({
-              ...budget,
-              category: e.target.value,
-            })
-          }
-        >
-          {categories
-            .filter((c) => c.kind === "expense")
-            .map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-        </select>
-      </label>
-      <label>
-        Moneda
-        <select
-          value={budget.currency}
-          onChange={(e) => setBudget({ ...budget, currency: e.target.value })}
-        >
-          <option value="PEN">Soles</option>
-          <option value="USD">Dólares</option>
-        </select>
-      </label>
-      <label>
-        Límite
-        <input
-          required
-          type="number"
-          min="0.01"
-          step="0.01"
-          value={budget.limit_amount}
-          onChange={(e) =>
-            setBudget({ ...budget, limit_amount: e.target.value })
-          }
-        />
-      </label>
-      <button className="primary" type="submit">
-        Crear presupuesto
-      </button>
-    </form>
-  );
   const savingsGoalForm = (
     <form className="form-grid" onSubmit={createSavingsGoal}>
       <label>
@@ -999,7 +939,10 @@ function App() {
           )}
           {page === "Presupuestos" && (
             <Budgets
-              budgetForm={budgetForm}
+              budget={budget}
+              setBudget={setBudget}
+              categories={categories}
+              submitBudget={submitBudget}
               budgetList={budgetList}
               month={month}
               monthLabel={monthLabel}
