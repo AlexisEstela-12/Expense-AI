@@ -8,3 +8,6 @@ export const postJson = (path, payload) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+
+export const postWithoutBody = (path) =>
+  fetch(`${API}/${path}`, { method: "POST" });

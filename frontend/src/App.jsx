@@ -45,6 +45,13 @@ import {
   createRecurringPaymentRequest,
   payRecurringPaymentRequest,
 } from "./api/resources.js";
+import {
+  createSavingsGoalRequest,
+  addSavingsContributionRequest,
+  cancelSavingsGoalRequest,
+  useSavingsGoalRequest,
+  createCategoryRequest,
+} from "./api/resources.js";
 const today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
 const money = (n, c = "PEN") =>
@@ -347,17 +354,11 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/savings-goals`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: savingsGoalFormData.name,
-          currency: savingsGoalFormData.currency,
-          target_amount: Number(savingsGoalFormData.target_amount),
-          target_date: savingsGoalFormData.target_date || null,
-        }),
+      const response = await createSavingsGoalRequest({
+        name: savingsGoalFormData.name,
+        currency: savingsGoalFormData.currency,
+        target_amount: Number(savingsGoalFormData.target_amount),
+        target_date: savingsGoalFormData.target_date || null,
       });
 
       const data = await response.json();
@@ -406,19 +407,10 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(
-        `${API}/savings-goals/${goal.id}/contributions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            date: contributionDate,
-            amount: numericAmount,
-          }),
-        },
-      );
+      const response = await addSavingsContributionRequest(goal.id, {
+        date: contributionDate,
+        amount: numericAmount,
+      });
 
       const data = await response.json();
 
@@ -445,9 +437,7 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/savings-goals/${goal.id}/cancel`, {
-        method: "POST",
-      });
+      const response = await cancelSavingsGoalRequest(goal.id);
 
       const data = await response.json();
 
@@ -480,9 +470,7 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/savings-goals/${goal.id}/use`, {
-        method: "POST",
-      });
+      const response = await useSavingsGoalRequest(goal.id);
 
       const data = await response.json();
 
@@ -573,15 +561,9 @@ function App() {
     setNotice("");
 
     try {
-      const response = await fetch(`${API}/categories`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name,
-          kind: form.kind,
-        }),
+      const response = await createCategoryRequest({
+        name: name,
+        kind: form.kind,
       });
 
       const data = await response.json();

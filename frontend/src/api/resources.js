@@ -1,4 +1,4 @@
-import { get, postJson } from "./client.js";
+import { get, postJson, postWithoutBody } from "./client.js";
 
 export const getSummary = () => get("summary");
 export const getMovements = () => get("movements");
@@ -20,3 +20,13 @@ export const createRecurringPaymentRequest = (payload) =>
   postJson("recurring-payments", payload);
 export const payRecurringPaymentRequest = (id, payload) =>
   postJson(`recurring-payments/${id}/pay`, payload);
+export const createSavingsGoalRequest = (payload) =>
+  postJson("savings-goals", payload);
+export const addSavingsContributionRequest = (id, payload) =>
+  postJson(`savings-goals/${id}/contributions`, payload);
+export const cancelSavingsGoalRequest = (id) =>
+  postWithoutBody(`savings-goals/${id}/cancel`);
+export const useSavingsGoalRequest = (id) =>
+  postWithoutBody(`savings-goals/${id}/use`);
+export const createCategoryRequest = (payload) =>
+  postJson("categories", payload);
