@@ -1,13 +1,19 @@
 from datetime import date, timedelta
 from decimal import Decimal
-from enum import Enum
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from dateutil.relativedelta import relativedelta
 if __package__:
+    from .schemas.common import Money
+    from .schemas.movements import MovementIn
+    from .schemas.exchanges import ExchangeIn
+    from .schemas.categories import CategoryIn
+    from .schemas.budgets import BudgetIn
+    from .schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
+    from .schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
+    from .schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
     from .db.base import Base
     from .db.models import Movement, Exchange, Budget, Category, Reimbursement, RecurringPayment, SavingsGoal, SavingsContribution
     from .db.session import connection_string, DB_URL, engine, SessionLocal
@@ -17,6 +23,14 @@ if __package__:
     from .chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
+    from schemas.common import Money
+    from schemas.movements import MovementIn
+    from schemas.exchanges import ExchangeIn
+    from schemas.categories import CategoryIn
+    from schemas.budgets import BudgetIn
+    from schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
+    from schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
+    from schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
     from db.base import Base
     from db.models import Movement, Exchange, Budget, Category, Reimbursement, RecurringPayment, SavingsGoal, SavingsContribution
     from db.session import connection_string, DB_URL, engine, SessionLocal
@@ -32,23 +46,6 @@ app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http:
 
 def db():
     with SessionLocal() as session: yield session
-class Money(str, Enum): PEN='PEN'; USD='USD'
-class MovementIn(BaseModel):
-    date: date
-    kind: str = Field(pattern='^(income|expense|reimbursement)$')
-    currency: Money
-    amount: Decimal = Field(gt=0, max_digits=16, decimal_places=2)
-    category: str = Field(min_length=1,max_length=80)
-    description: str = Field(default='',max_length=255)
-class ExchangeIn(BaseModel):
-    date: date
-    from_currency: Money
-    amount_out: Decimal = Field(gt=0,max_digits=16,decimal_places=2)
-    amount_in: Decimal = Field(gt=0,max_digits=16,decimal_places=2)
-class CategoryIn(BaseModel):
-    name: str = Field(min_length=1, max_length=80)
-    kind: str = Field(pattern='^(income|expense|reimbursement)$')
-
 DEFAULT_CATEGORIES = {
     'income': [
         'Sueldo',
@@ -75,52 +72,6 @@ DEFAULT_CATEGORIES = {
         'Reembolso laboral'
     ]
 }
-class BudgetIn(BaseModel):
-    month: str = Field(pattern=r'^\d{4}-(0[1-9]|1[0-2])$')
-    category: str = Field(min_length=1,max_length=80)
-    currency: Money
-    limit_amount: Decimal = Field(gt=0,max_digits=16,decimal_places=2)
-
-class ReimbursementIn(BaseModel):
-    date: date
-    currency: Money
-    amount: Decimal = Field(gt=0, max_digits=16, decimal_places=2)
-    category: str = Field(default='Gastos laborales', min_length=1, max_length=80)
-    description: str = Field(default='', max_length=255)
-
-class ReimbursementPaidIn(BaseModel):
-    date: date
-    
-class RecurringPaymentIn(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    category: str = Field(min_length=1, max_length=80)
-    currency: Money
-    amount: Decimal = Field(gt=0, max_digits=16, decimal_places=2)
-    frequency: str = Field(pattern='^(weekly|monthly|yearly)$')
-    next_payment_date: date
-    
-class RecurringPaymentPaidIn(BaseModel):
-    date: date
-    
-class SavingsGoalIn(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    currency: Money
-    target_amount: Decimal = Field(
-        gt=0,
-        max_digits=16,
-        decimal_places=2
-    )
-    target_date: date | None = None
-
-
-class SavingsContributionIn(BaseModel):
-    date: date
-    amount: Decimal = Field(
-        gt=0,
-        max_digits=16,
-        decimal_places=2
-    )
-
 def available(session):
     totals={'PEN':Decimal('0'),'USD':Decimal('0')}
     for m in session.scalars(select(Movement)):
