@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from dateutil.relativedelta import relativedelta
 if __package__:
+    from .api.routers.health import router as health_router
     from .schemas.common import Money
     from .schemas.movements import MovementIn
     from .schemas.exchanges import ExchangeIn
@@ -24,6 +25,7 @@ if __package__:
     from .chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
+    from api.routers.health import router as health_router
     from schemas.common import Money
     from schemas.movements import MovementIn
     from schemas.exchanges import ExchangeIn
@@ -45,6 +47,7 @@ Base.metadata.create_all(engine)
 
 app = FastAPI(title='Expense AI API', version='0.1.0')
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['*'], allow_headers=['*'])
+app.include_router(health_router)
 
 def db():
     with SessionLocal() as session: yield session
@@ -74,9 +77,6 @@ DEFAULT_CATEGORIES = {
         'Reembolso laboral'
     ]
 }
-@app.get('/health')
-def health(): return {'status':'ok'}
-
 @app.get('/summary')
 def summary(session: Session = Depends(db)):
     totals = available(session)
