@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Send, MessageSquare } from "lucide-react";
+import { requestFinancialChat } from "../api/chat.js";
 
 const SUGGESTIONS = [
   "¿Cuánto dinero tengo disponible en soles y dólares?",
@@ -355,12 +356,7 @@ export default function FinancialChat({ api }) {
     }, 90000);
 
     try {
-      const response = await fetch(`${api}/api/chat/tools`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-        signal: controller.signal,
-      });
+      const response = await requestFinancialChat(message, controller.signal, api);
       if (!response.ok) {
         throw new Error(
           response.status === 403
