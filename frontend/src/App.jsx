@@ -29,6 +29,16 @@ import Reimbursements from "./pages/Reimbursements.jsx";
 import Exchanges from "./pages/Exchanges.jsx";
 import { API } from "./api/client.js";
 import { createMovement, createExchange, createBudget } from "./api/resources.js";
+import {
+  getSummary,
+  getMovements,
+  getBudgets,
+  getCategories,
+  getReimbursements,
+  getRecurringPayments,
+  getSavingsGoals,
+  getNotifications,
+} from "./api/resources.js";
 const today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
 const money = (n, c = "PEN") =>
@@ -124,15 +134,15 @@ function App() {
     try {
       const responses = await Promise.all(
         [
-          "summary",
-          "movements",
-          "budgets",
-          "categories",
-          "reimbursements",
-          "recurring-payments",
-          "savings-goals",
-          "notifications",
-        ].map((endpoint) => fetch(`${API}/${endpoint}`)),
+          getSummary(),
+          getMovements(),
+          getBudgets(),
+          getCategories(),
+          getReimbursements(),
+          getRecurringPayments(),
+          getSavingsGoals(),
+          getNotifications(),
+        ],
       );
       for (const r of responses)
         if (!r.ok) throw Error("No se pudieron cargar los datos");
