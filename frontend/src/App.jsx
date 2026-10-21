@@ -636,77 +636,6 @@ function App() {
     e.preventDefault();
     send("budgets", budget, () => setBudget({ ...budget, limit_amount: "" }));
   };
-  const savingsGoalForm = (
-    <form className="form-grid" onSubmit={createSavingsGoal}>
-      <label>
-        Nombre de la meta
-        <input
-          type="text"
-          placeholder="Ej. Viaje, Laptop, Fondo de emergencia"
-          value={savingsGoalFormData.name}
-          onChange={(e) =>
-            setSavingsGoalFormData({
-              ...savingsGoalFormData,
-              name: e.target.value,
-            })
-          }
-          required
-        />
-      </label>
-
-      <label>
-        Moneda
-        <select
-          value={savingsGoalFormData.currency}
-          onChange={(e) =>
-            setSavingsGoalFormData({
-              ...savingsGoalFormData,
-              currency: e.target.value,
-            })
-          }
-        >
-          <option value="PEN">PEN - Soles</option>
-          <option value="USD">USD - Dólares</option>
-        </select>
-      </label>
-
-      <label>
-        Monto objetivo
-        <input
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-          value={savingsGoalFormData.target_amount}
-          onChange={(e) =>
-            setSavingsGoalFormData({
-              ...savingsGoalFormData,
-              target_amount: e.target.value,
-            })
-          }
-          required
-        />
-      </label>
-
-      <label>
-        Fecha objetivo
-        <input
-          type="date"
-          value={savingsGoalFormData.target_date}
-          onChange={(e) =>
-            setSavingsGoalFormData({
-              ...savingsGoalFormData,
-              target_date: e.target.value,
-            })
-          }
-        />
-      </label>
-
-      <button className="primary" type="submit">
-        Crear meta
-      </button>
-    </form>
-  );
   const budgetList = (
     <div className="budget-list">
       {currentBudgets.length ? (
@@ -951,7 +880,9 @@ function App() {
 
           {page === "Metas de ahorro" && (
             <SavingsGoals
-              savingsGoalForm={savingsGoalForm}
+              savingsGoalFormData={savingsGoalFormData}
+              setSavingsGoalFormData={setSavingsGoalFormData}
+              createSavingsGoal={createSavingsGoal}
               savingsGoals={savingsGoals}
               money={money}
               addSavingsContribution={addSavingsContribution}
