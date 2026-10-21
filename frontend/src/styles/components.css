@@ -1,0 +1,423 @@
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 18px
+}
+
+.stat,
+.panel {
+    background: white;
+    border: 1px solid #e7edf5;
+    border-radius: 13px;
+    box-shadow: 0 4px 20px #233b5910
+}
+
+.stat {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 160px;
+    gap: 8px
+}
+
+.stat>span:not(.stat-icon) {
+    font-size: 13px;
+    color: #61718a
+}
+
+.stat strong {
+    font-size: clamp(19px, 1.8vw, 28px);
+    letter-spacing: -.7px;
+    white-space: nowrap
+}
+
+.stat small {
+    color: #6b7b90
+}
+
+.stat-icon {
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    width: 37px;
+    height: 37px;
+    margin-bottom: 2px
+}
+
+.stat-icon svg {
+    width: 19px
+}
+
+.green-bg {
+    background: #e0f3e9;
+    color: #25835f
+}
+
+.blue-bg {
+    background: #e3eefc;
+    color: #205dac
+}
+
+.red-bg {
+    background: #fde8e5;
+    color: #c9473a
+}
+
+.panels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px
+}
+
+.panel {
+    padding: 21px;
+    min-width: 0
+}
+
+.panel h2 {
+    font-size: 17px;
+    margin: 0 0 20px
+}
+
+.panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px
+}
+
+.panel-title h2 {
+    margin: 0
+}
+
+.panel-title>span {
+    color: #75849a;
+    font-size: 12px
+}
+
+.pie-layout {
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.legend {
+    flex: 1;
+    min-width: 0
+}
+
+.legend>div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf1f6;
+    font-size: 12px
+}
+
+.legend strong {
+    margin-left: auto;
+    white-space: nowrap
+}
+
+.dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 7px;
+    flex: none
+}
+
+.budget-line {
+    padding: 14px 0;
+    border-bottom: 1px solid #edf1f6
+}
+
+.budget-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 9px
+}
+
+.budget-top strong {
+    font-size: 13px
+}
+
+.budget-top small {
+    color: #8a98aa
+}
+
+.budget-top b {
+    margin-left: 10px
+}
+
+.track {
+    background: #e5ebf2;
+    height: 8px;
+    border-radius: 30px;
+    overflow: hidden
+}
+
+.track>div {
+    height: 100%;
+    border-radius: 30px
+}
+
+.track .green {
+    background: #2b9b73
+}
+
+.track .amber {
+    background: #e2a22b
+}
+
+.track .red {
+    background: #d95348
+}
+
+.ok {
+    color: #21855e
+}
+
+.warning {
+    color: #bb801d
+}
+
+.danger,
+.negative {
+    color: #d34a40
+}
+
+.positive {
+    color: #27865e
+}
+
+.alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf1f6
+}
+
+.alert-item strong {
+    font-size: 13px
+}
+
+.alert-item p {
+    font-size: 12px;
+    color: #6d7e94;
+    margin: 5px 0 0
+}
+
+.alert-icon {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    flex: none;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold
+}
+
+.critical {
+    background: #d9574d
+}
+
+.caution {
+    background: #e4ac39
+}
+
+.link {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border: 0;
+    background: transparent;
+    color: #2165b5;
+    font-size: 12px
+}
+
+.recent {
+    margin-top: 18px
+}
+
+.table-wrap {
+    overflow: auto
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px
+}
+
+th {
+    text-align: left;
+    background: #f1f5fa;
+    color: #62728a;
+    font-weight: 600
+}
+
+th,
+td {
+    padding: 12px 11px;
+    border-bottom: 1px solid #e9eef5;
+    white-space: nowrap
+}
+
+td:last-child {
+    font-weight: 700
+}
+
+.type {
+    font-weight: 600
+}
+
+.type.income,
+.type.reimbursement {
+    color: #23815d
+}
+
+.type.expense {
+    color: #cf4b40
+}
+
+.empty {
+    color: #8491a4;
+    text-align: center;
+    padding: 24px 8px;
+    font-size: 13px
+}
+
+.chart-empty {
+    min-height: 265px;
+    display: grid;
+    place-items: center
+}
+
+.primary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    background: #2367b9;
+    color: white;
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 17px;
+    font-weight: 700
+}
+
+.primary:hover {
+    background: #194f92
+}
+
+.compact {
+    font-size: 13px
+}
+
+.secondary {
+    border: 1px solid #ced9e8;
+    background: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #214b7f
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px
+}
+
+.form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #44566e;
+    font-size: 13px;
+    font-weight: 600
+}
+
+.form-grid .primary,
+.form-grid .hint {
+    grid-column: 1/-1
+}
+
+.hint,
+.muted {
+    color: #77869b;
+    font-size: 13px;
+    line-height: 1.6
+}
+
+.form-grid input,
+.form-grid select,
+.month-select input {
+    padding: 11px 12px;
+    border: 1px solid #d8e1ee;
+    border-radius: 8px;
+    background: white;
+    color: #1a2b47;
+    min-width: 0
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #e9eef5;
+    padding: 15px 0;
+    font-size: 13px
+}
+
+.summary-row span {
+    color: #62738a
+}
+
+.full {
+    grid-column: 1/-1
+}
+
+.balance-box {
+    padding: 20px;
+    background: #f1f6fc;
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px
+}
+
+.balance-box small {
+    color: #687b92
+}
+
+.balance-box strong {
+    font-size: 25px
+}
+
+.message {
+    padding: 13px 17px;
+    margin-bottom: 17px;
+    border-radius: 9px;
+    font-size: 13px
+}
+
+.error {
+    background: #fce8e5;
+    color: #a73228
+}
+
+.success {
+    background: #e0f4e9;
+    color: #216f4c
+}
