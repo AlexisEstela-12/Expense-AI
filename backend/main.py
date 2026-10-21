@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 from dateutil.relativedelta import relativedelta
 if __package__:
     from .api.routers.health import router as health_router
+    from .api.routers.categories import create_router as create_categories_router
     from .schemas.common import Money
     from .schemas.movements import MovementIn
     from .schemas.exchanges import ExchangeIn
-    from .schemas.categories import CategoryIn
     from .schemas.budgets import BudgetIn
     from .schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
     from .schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
@@ -26,10 +26,10 @@ if __package__:
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
     from api.routers.health import router as health_router
+    from api.routers.categories import create_router as create_categories_router
     from schemas.common import Money
     from schemas.movements import MovementIn
     from schemas.exchanges import ExchangeIn
-    from schemas.categories import CategoryIn
     from schemas.budgets import BudgetIn
     from schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
     from schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
@@ -528,61 +528,7 @@ def pay_recurring_payment(
     }
     
     
-@app.get('/categories')
-def get_categories(session: Session = Depends(db)):
-    items = session.scalars(
-        select(Category).order_by(
-            Category.kind.asc(),
-            Category.name.asc()
-        )
-    ).all()
-
-    return [
-        {
-            'id': category.id,
-            'name': category.name,
-            'kind': category.kind
-        }
-        for category in items
-    ]
-
-@app.post('/categories', status_code=201)
-def create_category(payload: CategoryIn, session: Session = Depends(db)):
-    name = payload.name.strip()
-
-    if not name:
-        raise HTTPException(
-            status_code=400,
-            detail='La categoría no puede estar vacía.'
-        )
-
-    existing = session.scalars(
-        select(Category).where(
-            Category.kind == payload.kind,
-            Category.name == name
-        )
-    ).first()
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail='Esta categoría ya existe.'
-        )
-
-    category = Category(
-        name=name,
-        kind=payload.kind
-    )
-
-    session.add(category)
-    session.commit()
-    session.refresh(category)
-
-    return {
-        'id': category.id,
-        'name': category.name,
-        'kind': category.kind
-    }
+app.include_router(create_categories_router(db))
 
 @app.get('/notifications')
 def get_notifications(session: Session = Depends(db)):
