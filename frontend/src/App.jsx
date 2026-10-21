@@ -52,19 +52,9 @@ import {
   useSavingsGoalRequest,
   createCategoryRequest,
 } from "./api/resources.js";
+import { money, monthLabel } from "./utils/formatters.js";
 const today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
-const money = (n, c = "PEN") =>
-  new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: c,
-    minimumFractionDigits: 2,
-  }).format(Number(n || 0));
-const monthLabel = (m) =>
-  new Date(`${m}-02T12:00:00`).toLocaleDateString("es-PE", {
-    month: "long",
-    year: "numeric",
-  });
 const colors = [
   "#1f5eac",
   "#3b91d1",
