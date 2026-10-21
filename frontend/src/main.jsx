@@ -1,0 +1,2064 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  Wallet,
+  Target,
+  ReceiptText,
+  BarChart3,
+  Bell,
+  Settings,
+  Plus,
+  Menu,
+  X,
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  Repeat2,
+  MessageSquare,
+} from "lucide-react";
+import FinancialChat from "./components/FinancialChat.jsx";
+import "./style.css";
+const API = "http://127.0.0.1:8000",
+  today = new Date().toLocaleDateString("en-CA"),
+  monthNow = today.slice(0, 7);
+const money = (n, c = "PEN") =>
+  new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: c,
+    minimumFractionDigits: 2,
+  }).format(Number(n || 0));
+const monthLabel = (m) =>
+  new Date(`${m}-02T12:00:00`).toLocaleDateString("es-PE", {
+    month: "long",
+    year: "numeric",
+  });
+const colors = [
+  "#1f5eac",
+  "#3b91d1",
+  "#43876d",
+  "#d69a35",
+  "#8a9bb1",
+  "#d16a51",
+  "#6973a5",
+];
+const menu = [
+  ["Dashboard", LayoutDashboard],
+  ["Movimientos", Wallet],
+  ["Cambio de divisas", ArrowLeftRight],
+  ["Presupuestos", Target],
+  ["Metas de ahorro", Target],
+  ["Reembolsos", ReceiptText],
+  ["Pagos recurrentes", Repeat2],
+  ["Reportes", BarChart3],
+  ["Notificaciones", Bell],
+  ["Asistente IA", MessageSquare],
+];
+function App() {
+  const [page, setPage] = useState("Dashboard"),
+    [mobile, setMobile] = useState(false),
+    [month, setMonth] = useState(monthNow),
+    [summary, setSummary] = useState({ balances: { PEN: 0, USD: 0 } }),
+    [movements, setMovements] = useState([]),
+    [budgets, setBudgets] = useState([]),
+    [error, setError] = useState(""),
+    [categories, setCategories] = useState([]),
+    [reimbursementsData, setReimbursementsData] = useState([]),
+    [recurringPayments, setRecurringPayments] = useState([]),
+    [notifications, setNotifications] = useState([]),
+    [savingsGoals, setSavingsGoals] = useState([]),
+    [savingsGoalFormData, setSavingsGoalFormData] = useState({
+      name: "",
+      currency: "PEN",
+      target_amount: "",
+      target_date: "",
+    }),
+    [showNewCategory, setShowNewCategory] = useState(false),
+    [newCategory, setNewCategory] = useState(""),
+    [notice, setNotice] = useState("");
+  const [form, setForm] = useState({
+    date: today,
+    kind: "income",
+    currency: "PEN",
+    amount: "",
+    category: "Sueldo",
+    description: "",
+  });
+  const [fx, setFx] = useState({
+    date: today,
+    from_currency: "USD",
+    amount_out: "",
+    amount_in: "",
+  });
+  const [budget, setBudget] = useState({
+    month: monthNow,
+    category: "Alimentación",
+    currency: "PEN",
+    limit_amount: "",
+  });
+  const [reimbursementForm, setReimbursementForm] = useState({
+    date: today,
+    currency: "PEN",
+    amount: "",
+    category: "Gastos laborales",
+    description: "",
+  });
+  const [recurringForm, setRecurringForm] = useState({
+    name: "",
+    category: "Servicios",
+    currency: "PEN",
+    amount: "",
+    frequency: "monthly",
+    next_payment_date: today,
+  });
+  const load = async () => {
+    try {
+      const responses = await Promise.all(
+        [
+          "summary",
+          "movements",
+          "budgets",
+          "categories",
+          "reimbursements",
+          "recurring-payments",
+          "savings-goals",
+          "notifications",
+        ].map((endpoint) => fetch(`${API}/${endpoint}`)),
+      );
+      for (const r of responses)
+        if (!r.ok) throw Error("No se pudieron cargar los datos");
+      const [s, m, b, c, r, rp, sg, n] = await Promise.all(
+        responses.map((r) => r.json()),
+      );
+      setSummary(s);
+      setMovements(m);
+      setBudgets(b);
+      setCategories(c);
+      setReimbursementsData(r);
+      setRecurringPayments(rp);
+      setSavingsGoals(sg);
+      setNotifications(n);
+      setError("");
+    } catch (e) {
+      console.error("Error en load():", e);
+      setError(`Error al cargar datos: ${e.message}`);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const send = async (path, payload, reset) => {
+    setError("");
+    setNotice("");
+    try {
+      const r = await fetch(`${API}/${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }),
+        data = await r.json();
+      if (!r.ok)
+        throw Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail),
+        );
+      reset();
+      await load();
+      setNotice("Registro guardado correctamente");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const createReimbursement = async () => {
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/reimbursements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...reimbursementForm,
+          amount: Number(reimbursementForm.amount),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail),
+        );
+      }
+
+      setReimbursementForm({
+        date: today,
+        currency: "PEN",
+        amount: "",
+        category: "Gastos laborales",
+        description: "",
+      });
+
+      await load();
+
+      setNotice("Gasto reembolsable registrado correctamente.");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const completeReimbursement = async (id) => {
+    setError("");
+    setNotice("");
+
+    const reimbursementDate = window.prompt(
+      "¿Qué fecha recibiste el reembolso? (AAAA-MM-DD)",
+      today,
+    );
+
+    if (!reimbursementDate) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/reimbursements/${id}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: reimbursementDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail),
+        );
+      }
+
+      await load();
+
+      setNotice(
+        `Reembolso registrado correctamente con fecha ${reimbursementDate}.`,
+      );
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const createRecurringPayment = async () => {
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/recurring-payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...recurringForm,
+          amount: Number(recurringForm.amount),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail),
+        );
+      }
+
+      setRecurringForm({
+        name: "",
+        category: "Servicios",
+        currency: "PEN",
+        amount: "",
+        frequency: "monthly",
+        next_payment_date: today,
+      });
+
+      await load();
+
+      setNotice("Pago recurrente registrado correctamente.");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const payRecurringPayment = async (id) => {
+    setError("");
+    setNotice("");
+
+    const paymentDate = window.prompt(
+      "¿Qué fecha realizaste el pago? (AAAA-MM-DD)",
+      today,
+    );
+
+    if (!paymentDate) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/recurring-payments/${id}/pay`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: paymentDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail),
+        );
+      }
+
+      await load();
+
+      setNotice(
+        `Pago registrado correctamente. Próximo vencimiento: ${data.next_payment_date}.`,
+      );
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  async function createSavingsGoal(e) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/savings-goals`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: savingsGoalFormData.name,
+          currency: savingsGoalFormData.currency,
+          target_amount: Number(savingsGoalFormData.target_amount),
+          target_date: savingsGoalFormData.target_date || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No se pudo crear la meta de ahorro.");
+      }
+
+      setSavingsGoalFormData({
+        name: "",
+        currency: "PEN",
+        target_amount: "",
+        target_date: "",
+      });
+
+      setNotice("Meta de ahorro creada correctamente.");
+
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function addSavingsContribution(goal) {
+    const amount = window.prompt(
+      `¿Cuánto deseas aportar a "${goal.name}" en ${goal.currency}?`,
+    );
+
+    if (!amount) return;
+
+    const numericAmount = Number(amount);
+
+    if (!numericAmount || numericAmount <= 0) {
+      setError("Ingresa un monto válido.");
+      return;
+    }
+
+    const contributionDate = window.prompt(
+      "Fecha del aporte (AAAA-MM-DD):",
+      new Date().toISOString().slice(0, 10),
+    );
+
+    if (!contributionDate) return;
+
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(
+        `${API}/savings-goals/${goal.id}/contributions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            date: contributionDate,
+            amount: numericAmount,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No se pudo registrar el aporte.");
+      }
+
+      setNotice(`Aporte registrado correctamente en "${goal.name}".`);
+
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function cancelSavingsGoal(goal) {
+    const confirmed = window.confirm(
+      `¿Deseas cancelar la meta "${goal.name}"?\n\nEl dinero reservado volverá a estar disponible y no se registrará ningún gasto.`,
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/savings-goals/${goal.id}/cancel`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No se pudo cancelar la meta.");
+      }
+
+      setNotice(
+        `Meta "${goal.name}" cancelada. ${goal.currency} ${Number(
+          data.released_amount,
+        ).toFixed(2)} volvió a estar disponible.`,
+      );
+
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function useSavingsGoal(goal) {
+    const confirmed = window.confirm(
+      `¿Deseas utilizar el ahorro de "${goal.name}"?\n\nSe registrará ${goal.currency} ${Number(
+        goal.saved_amount,
+      ).toFixed(2)} como gasto y la meta quedará cerrada.`,
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/savings-goals/${goal.id}/use`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No se pudo utilizar el ahorro.");
+      }
+
+      setNotice(
+        `Ahorro de "${goal.name}" utilizado correctamente. Se registraron ${goal.currency} ${Number(
+          data.used_amount,
+        ).toFixed(2)} como gasto.`,
+      );
+
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const inMonth = (m) => m.date?.startsWith(month),
+    ordinary = (m) => m.category !== "Cambio de divisas";
+  const expenses = movements.filter(
+    (m) => inMonth(m) && m.kind === "expense" && ordinary(m),
+  );
+  const income = movements.filter(
+    (m) => inMonth(m) && m.kind === "income" && ordinary(m),
+  );
+  const reimbursements = movements.filter(
+    (m) => inMonth(m) && m.kind === "reimbursement",
+  );
+  const sum = (items, c) =>
+    items
+      .filter((m) => m.currency === c)
+      .reduce((a, m) => a + Number(m.amount), 0);
+  const expensePen = sum(expenses, "PEN"),
+    expenseUsd = sum(expenses, "USD"),
+    incomePen = sum(income, "PEN"),
+    incomeUsd = sum(income, "USD");
+  const categoryData = Object.values(
+    expenses
+      .filter((m) => m.currency === "PEN")
+      .reduce((a, m) => {
+        a[m.category] ??= { name: m.category, value: 0 };
+        a[m.category].value += Number(m.amount);
+        return a;
+      }, {}),
+  ).sort((a, b) => b.value - a.value);
+  const monthly = useMemo(() => {
+    const a = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(
+          Number(month.slice(0, 4)),
+          Number(month.slice(5)) - 1 - i,
+          1,
+        ),
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const group = movements.filter(
+        (m) => m.date.startsWith(key) && ordinary(m),
+      );
+      a.push({
+        name: d.toLocaleDateString("es-PE", { month: "short" }),
+        Ingresos: sum(
+          group.filter((m) => m.kind === "income"),
+          "PEN",
+        ),
+        Gastos: sum(
+          group.filter((m) => m.kind === "expense"),
+          "PEN",
+        ),
+      });
+    }
+    return a;
+  }, [movements, month]);
+  const currentBudgets = budgets.filter((b) => b.month === month),
+    alerts = currentBudgets
+      .filter((b) => b.alert > 0)
+      .sort((a, b) => b.percentage - a.percentage);
+
+  const createNewCategory = async () => {
+    const name = newCategory.trim();
+
+    if (!name) {
+      setError("Escribe un nombre para la categoría.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch(`${API}/categories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name,
+          kind: form.kind,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No se pudo crear la categoría.");
+      }
+
+      setCategories((current) => [...current, data]);
+
+      setForm({
+        ...form,
+        category: data.name,
+      });
+
+      setNewCategory("");
+      setShowNewCategory(false);
+      setNotice(`Categoría "${data.name}" creada correctamente.`);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const open = (p) => {
+    setPage(p);
+    setMobile(false);
+    setError("");
+    setNotice("");
+  };
+  const submitMovement = (e) => {
+    e.preventDefault();
+    send("movements", form, () =>
+      setForm({ ...form, amount: "", description: "" }),
+    );
+  };
+  const submitExchange = (e) => {
+    e.preventDefault();
+    send("exchanges", fx, () =>
+      setFx({ ...fx, amount_out: "", amount_in: "" }),
+    );
+  };
+  const submitBudget = (e) => {
+    e.preventDefault();
+    send("budgets", budget, () => setBudget({ ...budget, limit_amount: "" }));
+  };
+  const movementForm = (
+    <form onSubmit={submitMovement} className="form-grid">
+      <label>
+        Fecha
+        <input
+          required
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+        />
+      </label>
+      <label>
+        Tipo
+        <select
+          value={form.kind}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              kind: e.target.value,
+              category:
+                e.target.value === "expense"
+                  ? "Alimentación"
+                  : e.target.value === "reimbursement"
+                    ? "Reembolso laboral"
+                    : "Sueldo",
+            })
+          }
+        >
+          <option value="income">Ingreso</option>
+          <option value="expense">Gasto</option>
+          <option value="reimbursement">Reembolso recibido</option>
+        </select>
+      </label>
+      <label>
+        Moneda
+        <select
+          value={form.currency}
+          onChange={(e) => setForm({ ...form, currency: e.target.value })}
+        >
+          <option value="PEN">Soles (PEN)</option>
+          <option value="USD">Dólares (USD)</option>
+        </select>
+      </label>
+      <label>
+        Monto
+        <input
+          required
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+        />
+      </label>
+      <label>
+        Categoría
+        <select
+          required
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+        >
+          {categories
+            .filter((c) => c.kind === form.kind)
+            .map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+      </label>
+      <div className="category-action">
+        {!showNewCategory ? (
+          <button
+            type="button"
+            className="category-add"
+            onClick={() => setShowNewCategory(true)}
+          >
+            <Plus size={15} />
+            Nueva categoría
+          </button>
+        ) : (
+          <div className="new-category-box">
+            <input
+              type="text"
+              maxLength="80"
+              placeholder="Nombre de la nueva categoría"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+            />
+
+            <button
+              type="button"
+              className="secondary"
+              onClick={createNewCategory}
+            >
+              Agregar
+            </button>
+
+            <button
+              type="button"
+              className="category-cancel"
+              onClick={() => {
+                setShowNewCategory(false);
+                setNewCategory("");
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
+      <label>
+        Descripción (opcional)
+        <input
+          maxLength="255"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+      </label>
+      <button className="primary" type="submit">
+        Guardar movimiento
+      </button>
+    </form>
+  );
+  const exchangeForm = (
+    <form onSubmit={submitExchange} className="form-grid">
+      <label>
+        Fecha
+        <input
+          required
+          type="date"
+          value={fx.date}
+          onChange={(e) => setFx({ ...fx, date: e.target.value })}
+        />
+      </label>
+      <label>
+        Dirección
+        <select
+          value={fx.from_currency}
+          onChange={(e) => setFx({ ...fx, from_currency: e.target.value })}
+        >
+          <option value="USD">USD → PEN</option>
+          <option value="PEN">PEN → USD</option>
+        </select>
+      </label>
+      <label>
+        Monto entregado ({fx.from_currency})
+        <input
+          required
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={fx.amount_out}
+          onChange={(e) => setFx({ ...fx, amount_out: e.target.value })}
+        />
+      </label>
+      <label>
+        Monto recibido ({fx.from_currency === "USD" ? "PEN" : "USD"})
+        <input
+          required
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={fx.amount_in}
+          onChange={(e) => setFx({ ...fx, amount_in: e.target.value })}
+        />
+      </label>
+      <div className="hint">
+        Tipo de cambio efectivo:{" "}
+        {Number(fx.amount_out) > 0 && Number(fx.amount_in) > 0
+          ? (fx.from_currency === "USD"
+              ? Number(fx.amount_in) / Number(fx.amount_out)
+              : Number(fx.amount_out) / Number(fx.amount_in)
+            ).toFixed(4)
+          : "—"}{" "}
+        PEN/USD
+      </div>
+      <button className="primary" type="submit">
+        Registrar cambio
+      </button>
+    </form>
+  );
+  const budgetForm = (
+    <form onSubmit={submitBudget} className="form-grid">
+      <label>
+        Mes
+        <input
+          required
+          type="month"
+          value={budget.month}
+          onChange={(e) => setBudget({ ...budget, month: e.target.value })}
+        />
+      </label>
+      <label>
+        Categoría
+        <select
+          required
+          value={budget.category}
+          onChange={(e) =>
+            setBudget({
+              ...budget,
+              category: e.target.value,
+            })
+          }
+        >
+          {categories
+            .filter((c) => c.kind === "expense")
+            .map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+      </label>
+      <label>
+        Moneda
+        <select
+          value={budget.currency}
+          onChange={(e) => setBudget({ ...budget, currency: e.target.value })}
+        >
+          <option value="PEN">Soles</option>
+          <option value="USD">Dólares</option>
+        </select>
+      </label>
+      <label>
+        Límite
+        <input
+          required
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={budget.limit_amount}
+          onChange={(e) =>
+            setBudget({ ...budget, limit_amount: e.target.value })
+          }
+        />
+      </label>
+      <button className="primary" type="submit">
+        Crear presupuesto
+      </button>
+    </form>
+  );
+  const savingsGoalForm = (
+    <form className="form-grid" onSubmit={createSavingsGoal}>
+      <label>
+        Nombre de la meta
+        <input
+          type="text"
+          placeholder="Ej. Viaje, Laptop, Fondo de emergencia"
+          value={savingsGoalFormData.name}
+          onChange={(e) =>
+            setSavingsGoalFormData({
+              ...savingsGoalFormData,
+              name: e.target.value,
+            })
+          }
+          required
+        />
+      </label>
+
+      <label>
+        Moneda
+        <select
+          value={savingsGoalFormData.currency}
+          onChange={(e) =>
+            setSavingsGoalFormData({
+              ...savingsGoalFormData,
+              currency: e.target.value,
+            })
+          }
+        >
+          <option value="PEN">PEN - Soles</option>
+          <option value="USD">USD - Dólares</option>
+        </select>
+      </label>
+
+      <label>
+        Monto objetivo
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          value={savingsGoalFormData.target_amount}
+          onChange={(e) =>
+            setSavingsGoalFormData({
+              ...savingsGoalFormData,
+              target_amount: e.target.value,
+            })
+          }
+          required
+        />
+      </label>
+
+      <label>
+        Fecha objetivo
+        <input
+          type="date"
+          value={savingsGoalFormData.target_date}
+          onChange={(e) =>
+            setSavingsGoalFormData({
+              ...savingsGoalFormData,
+              target_date: e.target.value,
+            })
+          }
+        />
+      </label>
+
+      <button className="primary" type="submit">
+        Crear meta
+      </button>
+    </form>
+  );
+  const budgetList = (
+    <div className="budget-list">
+      {currentBudgets.length ? (
+        currentBudgets.map((b) => (
+          <div className="budget-line" key={b.id}>
+            <div className="budget-top">
+              <strong>
+                {b.category} <small>{b.currency}</small>
+              </strong>
+              <span>
+                {money(b.spent, b.currency)} / {money(b.limit, b.currency)}{" "}
+                <b
+                  className={
+                    b.percentage >= 90
+                      ? "danger"
+                      : b.percentage >= 75
+                        ? "warning"
+                        : "ok"
+                  }
+                >
+                  {Math.round(b.percentage)}%
+                </b>
+              </span>
+            </div>
+            <div className="track">
+              <div
+                className={
+                  b.percentage >= 90
+                    ? "red"
+                    : b.percentage >= 75
+                      ? "amber"
+                      : "green"
+                }
+                style={{ width: `${Math.min(100, b.percentage)}%` }}
+              />
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="empty">
+          Aún no hay presupuestos para {monthLabel(month)}.
+        </p>
+      )}
+    </div>
+  );
+  const table = (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Moneda</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {movements
+            .filter((m) => (page === "Dashboard" ? inMonth(m) : true))
+            .slice(0, page === "Dashboard" ? 10 : 100)
+            .map((m) => (
+              <tr key={m.id}>
+                <td>{m.date}</td>
+                <td>
+                  <span className={`type ${m.kind}`}>
+                    {m.category === "Cambio de divisas"
+                      ? "↔ Cambio"
+                      : m.kind === "income"
+                        ? "↓ Ingreso"
+                        : m.kind === "expense"
+                          ? "↑ Gasto"
+                          : "↓ Reembolso"}
+                  </span>
+                </td>
+                <td>{m.category}</td>
+                <td>{m.description || "—"}</td>
+                <td>{m.currency}</td>
+                <td className={m.kind === "expense" ? "negative" : "positive"}>
+                  {m.kind === "expense" ? "− " : "+ "}
+                  {money(m.amount, m.currency)}
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+      {!movements.length && (
+        <p className="empty">Registra tu primer movimiento para comenzar.</p>
+      )}
+    </div>
+  );
+  return (
+    <div className="app">
+      <aside className={`sidebar ${mobile ? "shown" : ""}`}>
+        <div className="brand">
+          <Wallet size={27} />
+          <strong>Expense AI</strong>
+          <button
+            className="mobile-close"
+            onClick={() => setMobile(false)}
+            aria-label="Cerrar menú"
+          >
+            <X />
+          </button>
+        </div>
+        <nav>
+          {menu.map(([label, Icon]) => (
+            <button
+              key={label}
+              onClick={() => open(label)}
+              className={page === label ? "active" : ""}
+            >
+              <Icon size={19} />
+              {label}
+              {label === "Notificaciones" && alerts.length > 0 && (
+                <span className="count">{alerts.length}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="side-bottom">
+          <button onClick={() => open("Configuración")}>
+            <Settings size={19} /> Configuración
+          </button>
+          <small>Finanzas personales · Local</small>
+        </div>
+      </aside>
+      <div className="content">
+        <div className="topbar">
+          <button
+            className="menu-toggle"
+            onClick={() => setMobile(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu />
+          </button>
+          <div className="top-spacer" />
+          {page !== "Asistente IA" && <label className="month-select">
+            Mes{" "}
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            />
+          </label>}
+          <div className="avatar">AI</div>
+        </div>
+        <main>
+          <div className="heading">
+            <div>
+              <h1>{page === "Dashboard" ? "Resumen financiero" : page}</h1>
+              <p>
+                {page === "Dashboard"
+                  ? "Tu dinero, claro y bajo control"
+                  : page === "Asistente IA"
+                    ? "Consulta tus saldos y gastos"
+                    : monthLabel(month)}
+              </p>
+            </div>
+            {page === "Dashboard" && (
+              <button
+                className="primary compact"
+                onClick={() => open("Movimientos")}
+              >
+                <Plus size={17} /> Nuevo movimiento
+              </button>
+            )}
+          </div>
+          {error && (
+            <div className="message error" role="alert">
+              {error}
+            </div>
+          )}
+          {notice && (
+            <div className="message success" role="status">
+              {notice}
+            </div>
+          )}
+          {page === "Dashboard" && (
+            <>
+              <div className="stats">
+                <div className="stat">
+                  <span className="stat-icon green-bg">
+                    <Wallet />
+                  </span>
+                  <span>Disponible en soles</span>
+                  <strong>
+                    {money(summary.spendable?.PEN ?? summary.balances.PEN)}
+                  </strong>
+                  <small>
+                    Total: {money(summary.balances.PEN)} · Reservado:{" "}
+                    {money(summary.reserved?.PEN ?? 0)}
+                  </small>
+                </div>
+
+                <div className="stat">
+                  <span className="stat-icon blue-bg">
+                    <Wallet />
+                  </span>
+                  <span>Disponible en dólares</span>
+                  <strong>
+                    {money(
+                      summary.spendable?.USD ?? summary.balances.USD,
+                      "USD",
+                    )}
+                  </strong>
+                  <small>
+                    Total: {money(summary.balances.USD, "USD")} · Reservado:{" "}
+                    {money(summary.reserved?.USD ?? 0, "USD")}
+                  </small>
+                </div>
+                <div className="stat">
+                  <span className="stat-icon green-bg">
+                    <TrendingUp />
+                  </span>
+                  <span>Ingresos del mes</span>
+                  <strong>{money(incomePen)}</strong>
+                  <small>USD: {money(incomeUsd, "USD")}</small>
+                </div>
+                <div className="stat">
+                  <span className="stat-icon red-bg">
+                    <TrendingDown />
+                  </span>
+                  <span>Gastos del mes</span>
+                  <strong>{money(expensePen)}</strong>
+                  <small>USD: {money(expenseUsd, "USD")}</small>
+                </div>
+              </div>
+              <div className="panels">
+                <section className="panel">
+                  <div className="panel-title">
+                    <h2>Gastos por categoría (PEN)</h2>
+                    <span>{monthLabel(month)}</span>
+                  </div>
+                  {categoryData.length ? (
+                    <div className="pie-layout">
+                      <ResponsiveContainer width="55%" height={265}>
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={65}
+                            outerRadius={100}
+                            paddingAngle={2}
+                          >
+                            {categoryData.map((d, i) => (
+                              <Cell
+                                key={d.name}
+                                fill={colors[i % colors.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(v) => money(v)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="legend">
+                        {categoryData.map((d, i) => (
+                          <div key={d.name}>
+                            <span
+                              className="dot"
+                              style={{ background: colors[i % colors.length] }}
+                            />
+                            {d.name}
+                            <strong>{money(d.value)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="empty chart-empty">
+                      Registra gastos en soles para visualizar el gráfico.
+                    </p>
+                  )}
+                </section>
+                <section className="panel">
+                  <div className="panel-title">
+                    <h2>Ingresos vs. gastos</h2>
+                    <span>Últimos 6 meses · PEN</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={270}>
+                    <BarChart
+                      data={monthly}
+                      margin={{ top: 12, right: 6, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid vertical={false} stroke="#e9edf4" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                      <YAxis tickLine={false} axisLine={false} width={60} />
+                      <Tooltip formatter={(v) => money(v)} />
+                      <Legend />
+                      <Bar
+                        dataKey="Ingresos"
+                        fill="#278763"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="Gastos"
+                        fill="#2563ad"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </section>
+                <section className="panel">
+                  <div className="panel-title">
+                    <h2>Presupuestos del mes</h2>
+                    <button
+                      className="link"
+                      onClick={() => open("Presupuestos")}
+                    >
+                      Ver todos <ChevronRight size={14} />
+                    </button>
+                  </div>
+                  {budgetList}
+                </section>
+                <section className="panel">
+                  <div className="panel-title">
+                    <h2>Alertas recientes</h2>
+                    <button
+                      className="link"
+                      onClick={() => open("Notificaciones")}
+                    >
+                      Ver todas <ChevronRight size={14} />
+                    </button>
+                  </div>
+                  {alerts.length ? (
+                    alerts.map((b) => (
+                      <div className="alert-item" key={b.id}>
+                        <span
+                          className={
+                            b.alert >= 90
+                              ? "alert-icon critical"
+                              : "alert-icon caution"
+                          }
+                        >
+                          !
+                        </span>
+                        <div>
+                          <strong>
+                            {b.alert >= 100
+                              ? "Presupuesto agotado"
+                              : `Has alcanzado el ${b.alert}% de tu presupuesto`}
+                          </strong>
+                          <p>
+                            {b.category}: {money(b.spent, b.currency)} de{" "}
+                            {money(b.limit, b.currency)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="empty">
+                      Sin alertas de presupuesto para este mes.
+                    </p>
+                  )}
+                </section>
+              </div>
+              <section className="panel recent">
+                <div className="panel-title">
+                  <h2>Movimientos recientes</h2>
+                  <button className="link" onClick={() => open("Movimientos")}>
+                    Ver todos <ChevronRight size={14} />
+                  </button>
+                </div>
+                {table}
+              </section>
+            </>
+          )}
+          {page === "Movimientos" && (
+            <div className="panels">
+              <section className="panel">
+                <h2>Nuevo movimiento</h2>
+                {movementForm}
+              </section>
+              <section className="panel">
+                <h2>Resumen del mes</h2>
+                <div className="summary-section-title">Saldos actuales</div>
+                <div className="summary-row">
+                  <span>Saldo disponible PEN</span>
+                  <b>{money(summary.balances.PEN)}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Saldo disponible USD</span>
+                  <b>{money(summary.balances.USD, "USD")}</b>
+                </div>
+                <div className="summary-section-title">Actividad del mes</div>
+                <div className="summary-row">
+                  <span>Ingresos PEN</span>
+                  <b>{money(incomePen)}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Ingresos USD</span>
+                  <b>{money(incomeUsd, "USD")}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Gastos PEN</span>
+                  <b>{money(expensePen)}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Gastos USD</span>
+                  <b>{money(expenseUsd, "USD")}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Reembolsos recibidos PEN</span>
+                  <b>{money(sum(reimbursements, "PEN"))}</b>
+                </div>
+                <div className="summary-row">
+                  <span>Reembolsos recibidos USD</span>
+                  <b>{money(sum(reimbursements, "USD"), "USD")}</b>
+                </div>
+              </section>
+              <section className="panel full">
+                <h2>Historial de movimientos</h2>
+                {table}
+              </section>
+            </div>
+          )}
+          {page === "Cambio de divisas" && (
+            <div className="panels">
+              <section className="panel">
+                <h2>Registrar cambio</h2>
+                <p className="muted">
+                  Sin cuentas de origen o destino ni comprobantes.
+                </p>
+                {exchangeForm}
+              </section>
+              <section className="panel">
+                <h2>Tus saldos</h2>
+                <div className="balance-box">
+                  <small>Soles disponibles</small>
+                  <strong>{money(summary.balances.PEN)}</strong>
+                </div>
+                <div className="balance-box">
+                  <small>Dólares disponibles</small>
+                  <strong>{money(summary.balances.USD, "USD")}</strong>
+                </div>
+                <p className="muted">
+                  Los saldos se actualizan automáticamente al registrar el
+                  cambio.
+                </p>
+              </section>
+              <section className="panel full">
+                <h2>Movimientos de cambio</h2>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Moneda</th>
+                        <th>Movimiento</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movements
+                        .filter((m) => m.category === "Cambio de divisas")
+                        .map((m) => (
+                          <tr key={m.id}>
+                            <td>{m.date}</td>
+                            <td>{m.currency}</td>
+                            <td
+                              className={
+                                m.kind === "expense" ? "negative" : "positive"
+                              }
+                            >
+                              {m.kind === "expense" ? "− " : "+ "}
+                              {money(m.amount, m.currency)}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+          {page === "Presupuestos" && (
+            <div className="panels">
+              <section className="panel">
+                <h2>Nuevo presupuesto</h2>
+                {budgetForm}
+              </section>
+              <section className="panel">
+                <h2>Seguimiento · {monthLabel(month)}</h2>
+                {budgetList}
+              </section>
+            </div>
+          )}
+
+          {page === "Metas de ahorro" && (
+            <div className="panels">
+              <section className="panel">
+                <h2>Nueva meta</h2>
+                {savingsGoalForm}
+              </section>
+
+              <section className="panel">
+                <div className="panel-title">
+                  <h2>Metas de ahorro</h2>
+                </div>
+
+                <p className="muted">
+                  Separa parte de tu saldo para objetivos específicos sin
+                  registrarlo como un gasto.
+                </p>
+
+                {savingsGoals.length === 0 ? (
+                  <p className="empty">Todavía no tienes metas de ahorro.</p>
+                ) : (
+                  savingsGoals.map((goal) => (
+                    <div className="budget-row" key={goal.id}>
+                      <div className="budget-head">
+                        <div>
+                          <strong>{goal.name}</strong>
+
+                          <p className="muted">
+                            Objetivo:{" "}
+                            {money(Number(goal.target_amount), goal.currency)}
+                            {goal.target_date
+                              ? ` · Fecha objetivo: ${goal.target_date}`
+                              : ""}
+                          </p>
+                        </div>
+
+                        <strong>{goal.percentage}%</strong>
+                      </div>
+
+                      <div className="progress">
+                        <span
+                          style={{
+                            width: `${Math.min(goal.percentage, 100)}%`,
+                          }}
+                        />
+                      </div>
+
+                      <p className="muted">
+                        Ahorrado:{" "}
+                        {money(Number(goal.saved_amount), goal.currency)} de{" "}
+                        {money(Number(goal.target_amount), goal.currency)}
+                      </p>
+                      <div className="goal-actions">
+                        <button
+                          className="primary"
+                          type="button"
+                          onClick={() => addSavingsContribution(goal)}
+                        >
+                          Realizar aporte
+                        </button>
+
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => useSavingsGoal(goal)}
+                          disabled={Number(goal.saved_amount) <= 0}
+                        >
+                          Usar ahorro
+                        </button>
+
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => cancelSavingsGoal(goal)}
+                        >
+                          Cancelar meta
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </section>
+            </div>
+          )}
+
+          {page === "Reembolsos" && (
+            <>
+              <div className="panels">
+                <section className="panel">
+                  <h2>Registrar gasto reembolsable</h2>
+
+                  <p className="muted">
+                    Registra un gasto laboral pagado con tu dinero y que
+                    posteriormente deberá ser reembolsado.
+                  </p>
+
+                  <form
+                    className="form-grid"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      createReimbursement();
+                    }}
+                  >
+                    <label>
+                      Fecha
+                      <input
+                        type="date"
+                        required
+                        value={reimbursementForm.date}
+                        onChange={(e) =>
+                          setReimbursementForm({
+                            ...reimbursementForm,
+                            date: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Moneda
+                      <select
+                        value={reimbursementForm.currency}
+                        onChange={(e) =>
+                          setReimbursementForm({
+                            ...reimbursementForm,
+                            currency: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="PEN">PEN - Soles</option>
+                        <option value="USD">USD - Dólares</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Monto
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        placeholder="0.00"
+                        value={reimbursementForm.amount}
+                        onChange={(e) =>
+                          setReimbursementForm({
+                            ...reimbursementForm,
+                            amount: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Descripción
+                      <input
+                        type="text"
+                        maxLength="255"
+                        required
+                        placeholder="Ej. Taxi reunión cliente"
+                        value={reimbursementForm.description}
+                        onChange={(e) =>
+                          setReimbursementForm({
+                            ...reimbursementForm,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <button type="submit" className="primary">
+                      Registrar gasto
+                    </button>
+                  </form>
+                </section>
+
+                <section className="panel">
+                  <h2>Resumen de reembolsos</h2>
+
+                  <div className="summary-section-title">
+                    Pendiente por recuperar
+                  </div>
+
+                  <div className="summary-row">
+                    <span>Soles</span>
+                    <b>
+                      {money(
+                        reimbursementsData
+                          .filter(
+                            (r) =>
+                              r.status === "pending" && r.currency === "PEN",
+                          )
+                          .reduce((total, r) => total + Number(r.amount), 0),
+                      )}
+                    </b>
+                  </div>
+
+                  <div className="summary-row">
+                    <span>Dólares</span>
+                    <b>
+                      {money(
+                        reimbursementsData
+                          .filter(
+                            (r) =>
+                              r.status === "pending" && r.currency === "USD",
+                          )
+                          .reduce((total, r) => total + Number(r.amount), 0),
+                        "USD",
+                      )}
+                    </b>
+                  </div>
+
+                  <div className="summary-section-title">
+                    Reembolsado este mes
+                  </div>
+
+                  <div className="summary-row">
+                    <span>Soles</span>
+                    <b>{money(sum(reimbursements, "PEN"))}</b>
+                  </div>
+
+                  <div className="summary-row">
+                    <span>Dólares</span>
+                    <b>{money(sum(reimbursements, "USD"), "USD")}</b>
+                  </div>
+                </section>
+              </div>
+
+              <div className="panel" style={{ marginTop: "20px" }}>
+                <h2>Gastos pendientes de reembolso</h2>
+
+                {reimbursementsData.filter((r) => r.status === "pending")
+                  .length === 0 ? (
+                  <p className="muted">
+                    No tienes gastos pendientes de reembolso.
+                  </p>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Descripción</th>
+                          <th>Moneda</th>
+                          <th>Monto</th>
+                          <th>Estado</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {reimbursementsData
+                          .filter((r) => r.status === "pending")
+                          .map((r) => (
+                            <tr key={r.id}>
+                              <td>{r.date}</td>
+                              <td>{r.description || "Gasto laboral"}</td>
+                              <td>{r.currency}</td>
+                              <td>{money(Number(r.amount), r.currency)}</td>
+                              <td>Pendiente</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="primary"
+                                  onClick={() => completeReimbursement(r.id)}
+                                >
+                                  Marcar como reembolsado
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="summary-section-title">
+                  Historial de reembolsos
+                </div>
+
+                {reimbursementsData.filter((r) => r.status === "reimbursed")
+                  .length === 0 ? (
+                  <p className="muted">
+                    Todavía no tienes reembolsos completados.
+                  </p>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Gasto</th>
+                          <th>Descripción</th>
+                          <th>Fecha reembolso</th>
+                          <th>Moneda</th>
+                          <th>Monto</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {reimbursementsData
+                          .filter((r) => r.status === "reimbursed")
+                          .map((r) => (
+                            <tr key={r.id}>
+                              <td>{r.date}</td>
+                              <td>{r.description || "Gasto laboral"}</td>
+                              <td>{r.reimbursed_date || "-"}</td>
+                              <td>{r.currency}</td>
+                              <td>{money(Number(r.amount), r.currency)}</td>
+                              <td>Reembolsado</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {page === "Pagos recurrentes" && (
+            <div className="panels">
+              <section className="panel">
+                <h2>Nuevo pago recurrente</h2>
+
+                <p className="muted">
+                  Registra servicios, suscripciones y otros pagos que realizas
+                  periódicamente.
+                </p>
+
+                <form
+                  className="form-grid"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    createRecurringPayment();
+                  }}
+                >
+                  <label>
+                    Nombre
+                    <input
+                      type="text"
+                      required
+                      maxLength="100"
+                      placeholder="Ej. Internet hogar"
+                      value={recurringForm.name}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          name: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label>
+                    Categoría
+                    <select
+                      value={recurringForm.category}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          category: e.target.value,
+                        })
+                      }
+                    >
+                      {categories
+                        .filter((c) => c.kind === "expense")
+                        .map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Moneda
+                    <select
+                      value={recurringForm.currency}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          currency: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="PEN">PEN - Soles</option>
+                      <option value="USD">USD - Dólares</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Monto
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      value={recurringForm.amount}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          amount: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label>
+                    Frecuencia
+                    <select
+                      value={recurringForm.frequency}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          frequency: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="weekly">Semanal</option>
+                      <option value="monthly">Mensual</option>
+                      <option value="yearly">Anual</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Próximo pago
+                    <input
+                      type="date"
+                      required
+                      value={recurringForm.next_payment_date}
+                      onChange={(e) =>
+                        setRecurringForm({
+                          ...recurringForm,
+                          next_payment_date: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+
+                  <button type="submit" className="primary">
+                    Registrar pago recurrente
+                  </button>
+                </form>
+              </section>
+              <section className="panel">
+                <h2>Próximos pagos</h2>
+
+                <p className="muted">
+                  Pagos recurrentes activos ordenados por su próximo
+                  vencimiento.
+                </p>
+
+                {recurringPayments.filter((p) => p.active).length === 0 ? (
+                  <p className="empty">No tienes pagos recurrentes activos.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Próximo pago</th>
+                          <th>Nombre</th>
+                          <th>Moneda</th>
+                          <th>Monto</th>
+                          <th>Frecuencia</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {recurringPayments
+                          .filter((p) => p.active)
+                          .map((p) => (
+                            <tr key={p.id}>
+                              <td>{p.next_payment_date}</td>
+                              <td>{p.name}</td>
+                              <td>{p.currency}</td>
+                              <td>{money(Number(p.amount), p.currency)}</td>
+                              <td>
+                                {p.frequency === "weekly"
+                                  ? "Semanal"
+                                  : p.frequency === "monthly"
+                                    ? "Mensual"
+                                    : "Anual"}
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="primary"
+                                  onClick={() => payRecurringPayment(p.id)}
+                                >
+                                  Marcar como pagado
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {page === "Reportes" && (
+            <div className="panels">
+              <section className="panel full">
+                <h2>Ingresos y gastos de los últimos seis meses (PEN)</h2>
+                <ResponsiveContainer width="100%" height={330}>
+                  <BarChart data={monthly}>
+                    <CartesianGrid vertical={false} stroke="#e9edf4" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(v) => money(v)} />
+                    <Legend />
+                    <Bar dataKey="Ingresos" fill="#278763" />
+                    <Bar dataKey="Gastos" fill="#2563ad" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </section>
+              <section className="panel full">
+                <h2>Gastos por categoría (PEN)</h2>
+                {categoryData.length ? (
+                  categoryData.map((d, i) => (
+                    <div className="summary-row" key={d.name}>
+                      <span>
+                        <span
+                          className="dot"
+                          style={{ background: colors[i % colors.length] }}
+                        />
+                        {d.name}
+                      </span>
+                      <b>{money(d.value)}</b>
+                    </div>
+                  ))
+                ) : (
+                  <p className="empty">No hay gastos en este período.</p>
+                )}
+              </section>
+            </div>
+          )}
+          {page === "Notificaciones" && (
+            <section className="panel">
+              <h2>Centro de notificaciones</h2>
+
+              <p className="muted">
+                Aquí encontrarás alertas sobre tus pagos, presupuestos y
+                reembolsos pendientes.
+              </p>
+
+              {notifications.length ? (
+                notifications.map((notification, index) => (
+                  <div
+                    className="alert-item"
+                    key={`${notification.type}-${notification.date}-${index}`}
+                  >
+                    <span
+                      className={
+                        notification.level === "danger"
+                          ? "alert-icon critical"
+                          : notification.level === "warning"
+                            ? "alert-icon caution"
+                            : "alert-icon"
+                      }
+                    >
+                      !
+                    </span>
+
+                    <div>
+                      <strong>{notification.title}</strong>
+
+                      <p>{notification.message}</p>
+
+                      <span className="muted">
+                        {notification.type === "recurring_payment"
+                          ? "Pago recurrente"
+                          : notification.type === "budget"
+                            ? "Presupuesto"
+                            : notification.type === "reimbursement"
+                              ? "Reembolso"
+                              : "Notificación"}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="empty">No tienes notificaciones activas.</p>
+              )}
+
+              <p className="muted">
+                Por ahora las alertas se muestran dentro de la aplicación; las
+                notificaciones externas llegarán en otra fase.
+              </p>
+            </section>
+          )}
+          <div hidden={page !== "Asistente IA"}>
+            <FinancialChat api={API} />
+          </div>
+          {page === "Configuración" && (
+            <section className="panel">
+              <h2>Configuración</h2>
+              <p className="muted">
+                Versión local de desarrollo. No publiques esta aplicación en
+                Internet sin autenticación y HTTPS.
+              </p>
+              <button className="secondary" onClick={load}>
+                Actualizar datos
+              </button>
+            </section>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+createRoot(document.getElementById("root")).render(<App />);

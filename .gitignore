@@ -1,0 +1,48 @@
+# Local configuration and secrets
+.env
+.env.*
+*.env
+*.env.*
+credentials.json
+*credentials*.json
+*secrets*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+
+# Python environments, caches and generated files
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Frontend dependencies and builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Local databases, backups and logs
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+*.bak
+*.log
+logs/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
