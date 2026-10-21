@@ -10,8 +10,8 @@ if __package__:
     from .api.routers.categories import create_router as create_categories_router
     from .api.routers.budgets import create_router as create_budgets_router
     from .api.routers.reimbursements import create_router as create_reimbursements_router
+    from .api.routers.movements import create_router as create_movements_router
     from .schemas.common import Money
-    from .schemas.movements import MovementIn
     from .schemas.exchanges import ExchangeIn
     from .schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
     from .schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
@@ -29,8 +29,8 @@ else:
     from api.routers.categories import create_router as create_categories_router
     from api.routers.budgets import create_router as create_budgets_router
     from api.routers.reimbursements import create_router as create_reimbursements_router
+    from api.routers.movements import create_router as create_movements_router
     from schemas.common import Money
-    from schemas.movements import MovementIn
     from schemas.exchanges import ExchangeIn
     from schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
     from schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
@@ -226,16 +226,7 @@ def chat_financial_tools(
         execute_budget_status,
     )
 
-@app.get('/movements')
-def movements(session:Session=Depends(db)):
-    return [{'id':m.id,'date':m.date.isoformat(),'kind':m.kind,'currency':m.currency,'amount':str(m.amount),'category':m.category,'description':m.description} for m in session.scalars(select(Movement).order_by(Movement.date.desc(),Movement.id.desc())).all()]
-@app.post('/movements',status_code=201)
-def create_movement(payload:MovementIn,session:Session=Depends(db)):
-    if payload.kind=='expense': ensure_balance(session,payload.currency.value,payload.amount)
-    m=Movement(**payload.model_dump())
-    m.currency=payload.currency.value
-    session.add(m);session.commit();session.refresh(m)
-    return {'id':m.id}
+app.include_router(create_movements_router(db))
 @app.post('/exchanges',status_code=201)
 def exchange(payload:ExchangeIn,session:Session=Depends(db)):
     origin=payload.from_currency.value
