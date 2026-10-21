@@ -8,10 +8,10 @@ from dateutil.relativedelta import relativedelta
 if __package__:
     from .api.routers.health import router as health_router
     from .api.routers.categories import create_router as create_categories_router
+    from .api.routers.budgets import create_router as create_budgets_router
     from .schemas.common import Money
     from .schemas.movements import MovementIn
     from .schemas.exchanges import ExchangeIn
-    from .schemas.budgets import BudgetIn
     from .schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
     from .schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
     from .schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
@@ -27,10 +27,10 @@ if __package__:
 else:
     from api.routers.health import router as health_router
     from api.routers.categories import create_router as create_categories_router
+    from api.routers.budgets import create_router as create_budgets_router
     from schemas.common import Money
     from schemas.movements import MovementIn
     from schemas.exchanges import ExchangeIn
-    from schemas.budgets import BudgetIn
     from schemas.reimbursements import ReimbursementIn, ReimbursementPaidIn
     from schemas.recurring_payments import RecurringPaymentIn, RecurringPaymentPaidIn
     from schemas.savings_goals import SavingsGoalIn, SavingsContributionIn
@@ -250,19 +250,7 @@ def exchange(payload:ExchangeIn,session:Session=Depends(db)):
     ])
     session.commit()
     return {'id':ex.id,'rate':str(rate),'balances':{k:str(v) for k,v in available(session).items()}}
-@app.get('/budgets')
-def budgets(session:Session=Depends(db)):
-    data=[]
-    for b in session.scalars(select(Budget)):
-        spent=sum((m.amount for m in session.scalars(select(Movement).where(Movement.kind=='expense',Movement.category==b.category,Movement.currency==b.currency,Movement.exchange_id==None)) if m.date.strftime('%Y-%m')==b.month),Decimal('0'))
-        pct=spent/b.limit_amount*100
-        data.append({'id':b.id,'month':b.month,'category':b.category,'currency':b.currency,'limit':str(b.limit_amount),'spent':str(spent),'percentage':round(float(pct),1),'alert':100 if pct>=100 else 90 if pct>=90 else 75 if pct>=75 else 0})
-    return data
-@app.post('/budgets',status_code=201)
-def create_budget(payload:BudgetIn,session:Session=Depends(db)):
-    b=Budget(**payload.model_dump());b.currency=payload.currency.value
-    session.add(b);session.commit();session.refresh(b)
-    return {'id':b.id}
+app.include_router(create_budgets_router(db))
 @app.post('/reimbursements', status_code=201)
 def create_reimbursement(
     payload: ReimbursementIn,
