@@ -72,11 +72,11 @@ export default function Exchanges({ fx, setFx, submitExchange, summary, movement
         <h2>Tus saldos</h2>
         <div className="balance-box">
           <small>Soles disponibles</small>
-          <strong>{money(summary.balances.PEN)}</strong>
+          <strong>{money(summary?.spendable?.PEN ?? 0)}</strong>
         </div>
         <div className="balance-box">
           <small>Dólares disponibles</small>
-          <strong>{money(summary.balances.USD, "USD")}</strong>
+          <strong>{money(summary?.spendable?.USD ?? 0, "USD")}</strong>
         </div>
         <p className="muted">
           Los saldos se actualizan automáticamente al registrar el

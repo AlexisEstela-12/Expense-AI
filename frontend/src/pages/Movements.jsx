@@ -140,11 +140,11 @@ export default function Movements({
         <div className="summary-section-title">Saldos actuales</div>
         <div className="summary-row">
           <span>Saldo disponible PEN</span>
-          <b>{money(summary.balances.PEN)}</b>
+          <b>{money(summary?.spendable?.PEN ?? 0)}</b>
         </div>
         <div className="summary-row">
           <span>Saldo disponible USD</span>
-          <b>{money(summary.balances.USD, "USD")}</b>
+          <b>{money(summary?.spendable?.USD ?? 0, "USD")}</b>
         </div>
         <div className="summary-section-title">Actividad del mes</div>
         <div className="summary-row">
