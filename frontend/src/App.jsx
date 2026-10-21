@@ -27,6 +27,7 @@ import SavingsGoals from "./pages/SavingsGoals.jsx";
 import RecurringPayments from "./pages/RecurringPayments.jsx";
 import Reimbursements from "./pages/Reimbursements.jsx";
 import Exchanges from "./pages/Exchanges.jsx";
+import { ordinary, sum } from "./utils/financialView.js";
 import { API } from "./api/client.js";
 import { createMovement, createExchange, createBudget } from "./api/resources.js";
 import {
@@ -480,8 +481,7 @@ function App() {
     }
   }
 
-  const inMonth = (m) => m.date?.startsWith(month),
-    ordinary = (m) => m.category !== "Cambio de divisas";
+  const inMonth = (m) => m.date?.startsWith(month);
   const expenses = movements.filter(
     (m) => inMonth(m) && m.kind === "expense" && ordinary(m),
   );
@@ -491,10 +491,6 @@ function App() {
   const reimbursements = movements.filter(
     (m) => inMonth(m) && m.kind === "reimbursement",
   );
-  const sum = (items, c) =>
-    items
-      .filter((m) => m.currency === c)
-      .reduce((a, m) => a + Number(m.amount), 0);
   const expensePen = sum(expenses, "PEN"),
     expenseUsd = sum(expenses, "USD"),
     incomePen = sum(income, "PEN"),
