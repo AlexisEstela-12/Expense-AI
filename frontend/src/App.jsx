@@ -20,6 +20,7 @@ import Reports from "./pages/Reports.jsx";
 import SettingsPage from "./pages/Settings.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Movements from "./pages/Movements.jsx";
+import Budgets from "./pages/Budgets.jsx";
 const API = "http://127.0.0.1:8000",
   today = new Date().toLocaleDateString("en-CA"),
   monthNow = today.slice(0, 7);
@@ -1216,16 +1217,12 @@ function App() {
             </div>
           )}
           {page === "Presupuestos" && (
-            <div className="panels">
-              <section className="panel">
-                <h2>Nuevo presupuesto</h2>
-                {budgetForm}
-              </section>
-              <section className="panel">
-                <h2>Seguimiento · {monthLabel(month)}</h2>
-                {budgetList}
-              </section>
-            </div>
+            <Budgets
+              budgetForm={budgetForm}
+              budgetList={budgetList}
+              month={month}
+              monthLabel={monthLabel}
+            />
           )}
 
           {page === "Metas de ahorro" && (
