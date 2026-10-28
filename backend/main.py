@@ -48,7 +48,6 @@ else:
     from chat.tool_balances import ToolBalanceRequest, ToolBalanceResponse, run_tool_balances
     from chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
-Base.metadata.create_all(engine)
 
 app = FastAPI(title='Expense AI API', version='0.1.0')
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['*'], allow_headers=['*'])
