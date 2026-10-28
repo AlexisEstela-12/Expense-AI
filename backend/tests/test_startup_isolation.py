@@ -25,7 +25,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 @contextmanager
-def isolated_app(source):
+def isolated_app(source, *, app_env='test'):
     """Never import production connection configuration, even for the baseline."""
     engine = create_engine('sqlite+pysqlite:///:memory:')
     fake = ModuleType('db.session')
@@ -48,6 +48,7 @@ def isolated_app(source):
 
     try:
         with ExitStack() as stack:
+            stack.enter_context(patch.dict('os.environ', {'APP_ENV': app_env}))
             stack.enter_context(patch.dict(sys.modules, {'db.session': fake}))
             stack.enter_context(patch.object(FastAPI, 'include_router', record_router))
             stack.enter_context(patch.object(Engine, 'connect', side_effect=forbidden))
@@ -91,7 +92,7 @@ class StartupIsolationTest(unittest.TestCase):
             self.assertEqual(original, reference)
             for route in routes:
                 if route.path != '/health':
-                    self.assertIs(route.dependant.dependencies[0].call, module.db)
+                    self.assertTrue(any(dep.call is module.db for dep in route.dependant.dependencies))
 
             async def startup_and_health():
                 async with app.router.lifespan_context(app):

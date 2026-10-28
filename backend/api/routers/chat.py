@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 if __package__.startswith('backend.'):
+    from ...security.dependencies import create_authentication_dependency
     from ...db.models import Movement, Category, Budget
     from ...chat.balances import BalanceChatRequest, BalanceChatResponse, explain_balances, is_balance_question
     from ...services.balances import available, reserved_savings, spendable_balance
@@ -9,6 +10,7 @@ if __package__.startswith('backend.'):
     from ...chat.tool_balances import ToolBalanceRequest, ToolBalanceResponse, run_tool_balances
     from ...chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
 else:
+    from security.dependencies import create_authentication_dependency
     from db.models import Movement, Category, Budget
     from chat.balances import BalanceChatRequest, BalanceChatResponse, explain_balances, is_balance_question
     from services.balances import available, reserved_savings, spendable_balance
@@ -17,33 +19,17 @@ else:
     from chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
 
 
-def create_router(db):
-    router = APIRouter()
+def create_router(db, *, authentication=None):
+    # A standalone chat router is also protected; production injects the same
+    # central dependency used by all financial routes.
+    authentication = authentication or create_authentication_dependency(db)
+    router = APIRouter(dependencies=[Depends(authentication)])
     @router.post('/api/chat/balances', response_model=BalanceChatResponse)
     def chat_balances(
         payload: BalanceChatRequest,
         request: Request,
         session: Session = Depends(db)
     ):
-        # Local development only: this is not authentication. Do not publish or
-        # expose through a proxy/tunnel; bind Uvicorn to 127.0.0.1.
-        if (
-            request.client is None
-            or request.client.host not in ('127.0.0.1', '::1')
-            or any(header in request.headers for header in (
-                'forwarded', 'x-forwarded-for', 'x-real-ip'
-            ))
-            or request.url.hostname not in ('localhost', '127.0.0.1', '::1')
-        ):
-            raise HTTPException(status_code=403, detail='Chat disponible solo en entorno local.')
-
-        origin = request.headers.get('origin')
-        if origin is not None and origin not in (
-            'http://localhost:5173', 'http://127.0.0.1:5173',
-            'http://127.0.0.1:8000', 'http://localhost:8000'
-        ):
-            raise HTTPException(status_code=403, detail='Origen no permitido para el chat local.')
-
         if not is_balance_question(payload.message):
             return BalanceChatResponse(
                 answer='Por ahora solo puedo consultar saldos. Pregunta: ¿Cuánto dinero tengo disponible en soles y dólares?',
@@ -72,23 +58,6 @@ def create_router(db):
         request: Request,
         session: Session = Depends(db)
     ):
-        # Local-only development endpoint; not a substitute for authentication.
-        if (
-            request.client is None
-            or request.client.host not in ('127.0.0.1', '::1')
-            or any(header in request.headers for header in (
-                'forwarded', 'x-forwarded-for', 'x-real-ip'
-            ))
-            or request.url.hostname not in ('localhost', '127.0.0.1', '::1')
-        ):
-            raise HTTPException(status_code=403, detail='Chat disponible solo en entorno local.')
-        origin = request.headers.get('origin')
-        if origin is not None and origin not in (
-            'http://localhost:5173', 'http://127.0.0.1:5173',
-            'http://127.0.0.1:8000', 'http://localhost:8000'
-        ):
-            raise HTTPException(status_code=403, detail='Origen no permitido para el chat local.')
-
         def execute_balances():
             return get_balances(
                 session,
@@ -105,23 +74,6 @@ def create_router(db):
         request: Request,
         session: Session = Depends(db)
     ):
-        # Development on loopback only. Do not publish; this is not authentication.
-        if (
-            request.client is None
-            or request.client.host not in ('127.0.0.1', '::1')
-            or any(header in request.headers for header in (
-                'forwarded', 'x-forwarded-for', 'x-real-ip'
-            ))
-            or request.url.hostname not in ('localhost', '127.0.0.1', '::1')
-        ):
-            raise HTTPException(status_code=403, detail='Chat disponible solo en entorno local.')
-        origin = request.headers.get('origin')
-        if origin is not None and origin not in (
-            'http://localhost:5173', 'http://127.0.0.1:5173',
-            'http://127.0.0.1:8000', 'http://localhost:8000'
-        ):
-            raise HTTPException(status_code=403, detail='Origen no permitido para el chat local.')
-
         def execute_balances():
             return get_balances(
                 session, available_fn=available,

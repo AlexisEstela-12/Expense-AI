@@ -87,7 +87,8 @@ def login(session, username, password, peer, now):
     return token, identity, now+ABSOLUTE_TIMEOUT
 
 
-def current_session(session, token, key, supplied_csrf, now, *, logout=False):
+def current_session(session, token, key, supplied_csrf, now, *, logout=False,
+                    require_csrf=False, validate_request=None):
     try:
         digest = hash_session_token(token)
     except InvalidSecurityInput:
@@ -99,8 +100,10 @@ def current_session(session, token, key, supplied_csrf, now, *, logout=False):
         user = session.get(AuthUser, row.user_id)
         if user is None or not user.active or row.created_at < user.password_changed_at:
             raise AuthRejected(401, 'Sesion no valida.')
+        if validate_request is not None:
+            validate_request()
         expected_csrf = csrf_token(token, key)
-        if logout and (not isinstance(supplied_csrf, str) or len(supplied_csrf) != 64 or
+        if (logout or require_csrf) and (not isinstance(supplied_csrf, str) or len(supplied_csrf) != 64 or
                        not supplied_csrf.isascii() or not hmac.compare_digest(supplied_csrf, expected_csrf)):
             raise AuthRejected(403, 'Solicitud no permitida.')
         values = {'revoked_at': now} if logout else {

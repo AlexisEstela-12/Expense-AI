@@ -866,18 +866,24 @@ class EndpointTests(OfflineTest):
         }
         exec(compile(ast.Module(body=[node], type_ignores=[]), '<isolated-endpoint>', 'exec'), namespace)
         self.endpoint = namespace['chat_financial_tools']
+        from security.dependencies import create_authentication_dependency
+        from security.config import load_auth_settings
+        from test_auth_endpoints import ENV
+        self.authentication = create_authentication_dependency(
+            lambda: None, settings_provider=lambda: load_auth_settings(environ=ENV))
 
     def request(self, host='127.0.0.1', hostname='127.0.0.1', headers=None):
-        return NS(client=NS(host=host), url=NS(hostname=hostname), headers=headers or {})
+        return NS(client=NS(host=host), url=NS(hostname=hostname), headers=headers or {},
+                  method='POST', cookies={})
 
-    def test_reject_remote_proxy_host_and_origin_before_orchestrator(self):
+    def test_reject_anonymous_remote_proxy_context_before_orchestrator(self):
         requests = [self.request(host='192.0.2.1'), self.request(hostname='example.com'),
                     self.request(headers={'x-forwarded-for': '127.0.0.1'}),
                     self.request(headers={'origin': 'https://example.com'})]
         for request in requests:
             with self.assertRaises(HTTPException) as error:
-                self.endpoint(flow.FinancialToolsRequest(message='Saldos'), request, object())
-            self.assertEqual(error.exception.status_code, 403)
+                self.authentication(request, session=object())
+            self.assertEqual(error.exception.status_code, 401)
         self.orchestrator.assert_not_called()
         self.query.assert_not_called()
 

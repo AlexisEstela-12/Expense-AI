@@ -68,3 +68,10 @@ def load_auth_settings(*, environ: Mapping[str, str] | None = None) -> AuthSetti
     except (ValueError, TypeError):
         raise ConfigurationError('Configuracion de autenticacion invalida: AUTH_ALLOWED_ORIGINS, AUTH_CSRF_KEY.') from None
     return AuthSettings(cookies, origins, key)
+
+
+def documentation_options(*, environ: Mapping[str, str] | None = None):
+    settings = load_security_settings(environ=environ)
+    if settings.app_env == 'production':
+        return {'docs_url': None, 'redoc_url': None, 'openapi_url': None}
+    return {}

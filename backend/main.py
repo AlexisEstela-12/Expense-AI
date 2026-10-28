@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 if __package__:
+    from .security.dependencies import create_authentication_dependency
+    from .security.config import documentation_options
     from .security.router import create_router as create_auth_router
     from .api.routers.health import router as health_router
     from .api.routers.categories import create_router as create_categories_router
@@ -28,6 +30,8 @@ if __package__:
     from .chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
+    from security.dependencies import create_authentication_dependency
+    from security.config import documentation_options
     from security.router import create_router as create_auth_router
     from api.routers.health import router as health_router
     from api.routers.categories import create_router as create_categories_router
@@ -51,12 +55,14 @@ else:
     from chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 
-app = FastAPI(title='Expense AI API', version='0.1.0')
+app = FastAPI(title='Expense AI API', version='0.1.0', **documentation_options())
 app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['*'], allow_headers=['*'])
 app.include_router(health_router)
 
 def db():
     with SessionLocal() as session: yield session
+require_authenticated_user = create_authentication_dependency(db)
+private_dependencies = [Depends(require_authenticated_user)]
 DEFAULT_CATEGORIES = {
     'income': [
         'Sueldo',
@@ -83,20 +89,20 @@ DEFAULT_CATEGORIES = {
         'Reembolso laboral'
     ]
 }
-app.include_router(create_financial_summary_router(db))
+app.include_router(create_financial_summary_router(db), dependencies=private_dependencies)
 
-app.include_router(create_chat_router(db))
+app.include_router(create_chat_router(db, authentication=require_authenticated_user))
 
-app.include_router(create_movements_router(db))
-app.include_router(create_exchanges_router(db))
-app.include_router(create_budgets_router(db))
-app.include_router(create_reimbursements_router(db))
+app.include_router(create_movements_router(db), dependencies=private_dependencies)
+app.include_router(create_exchanges_router(db), dependencies=private_dependencies)
+app.include_router(create_budgets_router(db), dependencies=private_dependencies)
+app.include_router(create_reimbursements_router(db), dependencies=private_dependencies)
 
-app.include_router(create_recurring_payments_router(db))
+app.include_router(create_recurring_payments_router(db), dependencies=private_dependencies)
 
-app.include_router(create_categories_router(db))
+app.include_router(create_categories_router(db), dependencies=private_dependencies)
 
-app.include_router(create_notifications_router(db))
+app.include_router(create_notifications_router(db), dependencies=private_dependencies)
 
-app.include_router(create_savings_goals_router(db))
+app.include_router(create_savings_goals_router(db), dependencies=private_dependencies)
 app.include_router(create_auth_router(db))

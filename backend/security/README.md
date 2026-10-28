@@ -1,8 +1,21 @@
-# Local authentication: phase 3
+# Local authentication: phases 3 and 4
 
 Three auth endpoints are registered, in addition to the 24 original operations.
-This phase does **not** protect financial/chat endpoints and is not ready for
-public ingress. Existing loopback restrictions on the chat remain unchanged.
+All 23 financial/chat operations require the central session dependency. Every
+private POST also requires an allowed Origin and the session-bound CSRF token.
+GET `/health` stays public. The chat uses the same dependency even when its router
+is composed separately; loopback/proxy-header checks have been removed only after
+negative HTTP tests. Headers such as X-Forwarded-For are never an identity.
+
+Session validation, Origin/CSRF checks and the bounded activity update complete
+before endpoint code can query financial tables or call providers. The auth
+transaction closes before financial transaction handling begins. Rejected auth
+requests do not modify session timestamps or financial data. Authentication DB
+failure returns sanitized 503, never anonymous access.
+
+Production disables `/docs`, `/redoc` and `/openapi.json`; development/test retain
+them. The internal OpenAPI schema still describes the same 27 operations and can
+be verified offline. Data contracts and financial computations are unchanged.
 
 ## Explicit runtime configuration
 
@@ -58,6 +71,9 @@ issued. Database failures are sanitized. SQL Server locking/deadlock behavior
 still needs a disposable SQL Server concurrency test; SQLite tests do not certify
 that behavior. Limit counters are not reset by successful logins.
 
-No session token, password, CSRF token or key is logged. Frontend/CORS integration,
-financial endpoint protection, chat guard transition and container packaging are
-later phases. In particular, production CORS is still the existing local policy.
+No session token, password, CSRF token or key is logged. Frontend/CORS integration
+and container packaging remain later phases. Production CORS is still the local
+policy, and the current frontend does not yet send session/CSRF credentials, so its
+private requests will be rejected. Do not expose publicly until those phases and
+SQL Server concurrency validation are complete. No real migration or account
+creation has been performed by the offline tests.

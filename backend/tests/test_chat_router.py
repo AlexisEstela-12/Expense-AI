@@ -79,21 +79,25 @@ class ChatRouterTest(unittest.TestCase):
         for route in self.routes.values():
             self.assertEqual(route.methods, {'POST'})
             self.assertIsNone(route.status_code)
-            self.assertIs(route.dependant.dependencies[0].call, self.db)
+            self.assertTrue(any(dep.call is self.db for dep in route.dependant.dependencies))
+            self.assertEqual(route.dependant.dependencies[0].call.__name__, 'require_authenticated_user')
         app = FastAPI(title='Expense AI API', version='0.1.0')
         app.include_router(self.router)
         self.assertEqual(set(app.openapi()['paths']), set(self.routes))
 
-    def test_local_access_guards_apply_to_all_three_routes(self):
+    def test_central_authentication_guards_all_three_routes(self):
+        from test_auth_endpoints import ENV
         for path in self.routes:
             for request in (
                 self.request(host='192.0.2.1'),
                 self.request(origin='https://example.invalid'),
                 self.request(forwarded=True),
             ):
-                with self.subTest(path=path), self.assertRaises(HTTPException) as caught:
-                    self.call(path, request=request)
-                self.assertEqual(caught.exception.status_code, 403)
+                with self.subTest(path=path), patch.dict('os.environ', ENV, clear=True), \
+                     self.assertRaises(HTTPException) as caught:
+                    dependency = self.routes[path].dependant.dependencies[0].call
+                    dependency(request, session=self.session)
+                self.assertEqual(caught.exception.status_code, 401)
         for path in self.routes:
             self.call_accepted_origin(path)
 
