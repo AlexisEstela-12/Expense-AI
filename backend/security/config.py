@@ -1,8 +1,10 @@
 """Security policy with no file reads, secrets or import-time configuration."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import base64
 from datetime import timedelta
 import os
 from typing import Mapping
+from urllib.parse import urlsplit
 
 if __package__.startswith('backend.'):
     from ..core.config import APP_ENVIRONMENTS, ConfigurationError
@@ -37,3 +39,32 @@ def load_security_settings(*, app_env: str | None = None,
     return SecuritySettings(selected,
                             'expense_session_dev' if development else '__Host-expense_session',
                             not development)
+
+
+@dataclass(frozen=True)
+class AuthSettings:
+    cookies: SecuritySettings
+    allowed_origins: tuple[str, ...]
+    csrf_key: bytes = field(repr=False)
+
+
+def load_auth_settings(*, environ: Mapping[str, str] | None = None) -> AuthSettings:
+    process = os.environ if environ is None else environ
+    cookies = load_security_settings(environ=process)
+    try:
+        origins = tuple(process.get('AUTH_ALLOWED_ORIGINS', '').split(','))
+        for origin in origins:
+            parsed = urlsplit(origin)
+            parsed.port  # Validate a supplied port without retaining its value.
+            if ('*' in origin or not parsed.hostname or parsed.username or parsed.password or parsed.query or
+                    parsed.fragment or parsed.path or origin != origin.strip() or
+                    parsed.scheme not in ('http', 'https') or
+                    (cookies.app_env != 'development' and parsed.scheme != 'https')):
+                raise ValueError
+        encoded = process.get('AUTH_CSRF_KEY', '')
+        key = base64.b64decode(encoded, altchars=b'-_', validate=True)
+        if len(key) != 32:
+            raise ValueError
+    except (ValueError, TypeError):
+        raise ConfigurationError('Configuracion de autenticacion invalida: AUTH_ALLOWED_ORIGINS, AUTH_CSRF_KEY.') from None
+    return AuthSettings(cookies, origins, key)

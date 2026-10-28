@@ -65,24 +65,30 @@ def isolated_app(source):
 
 
 class StartupIsolationTest(unittest.TestCase):
-    def test_main_has_no_schema_calls_and_keeps_eleven_router_registrations(self):
+    def test_main_has_no_schema_calls_and_keeps_original_plus_auth_routers(self):
         tree = ast.parse((ROOT / 'main.py').read_text(encoding='utf-8'))
         calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
         self.assertFalse(any(isinstance(node.func, ast.Attribute) and
                              node.func.attr in {'create_all', 'drop_all'} for node in calls))
         self.assertEqual(sum(isinstance(node.func, ast.Attribute) and
-                             node.func.attr == 'include_router' for node in calls), 11)
+                             node.func.attr == 'include_router' for node in calls), 12)
 
     def test_import_lifespan_health_and_openapi_without_connections_or_ddl(self):
         source = (ROOT / 'main.py').read_text(encoding='utf-8')
         reference = json.loads((ROOT / 'tests/fixtures/openapi_before_startup_fix.json').read_text(encoding='utf-8'))
         with isolated_app(source) as module:
             app = module.app
-            self.assertEqual(len(module.registered_routers), 11)
+            self.assertEqual(len(module.registered_routers), 12)
             routes = [r for router in module.registered_routers for r in router.routes
                       if isinstance(r, APIRoute)]
-            self.assertEqual(sum(len(r.methods) for r in routes), 24)
-            self.assertEqual(app.openapi(), reference)
+            self.assertEqual(sum(len(r.methods) for r in routes), 27)
+            schema = app.openapi()
+            self.assertEqual(set(schema['paths']) - set(reference['paths']),
+                             {'/auth/login', '/auth/session', '/auth/logout'})
+            original = dict(schema)
+            original['paths'] = {path: value for path, value in schema['paths'].items()
+                                 if not path.startswith('/auth/')}
+            self.assertEqual(original, reference)
             for route in routes:
                 if route.path != '/health':
                     self.assertIs(route.dependant.dependencies[0].call, module.db)

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 if __package__:
+    from .security.router import create_router as create_auth_router
     from .api.routers.health import router as health_router
     from .api.routers.categories import create_router as create_categories_router
     from .api.routers.budgets import create_router as create_budgets_router
@@ -27,6 +28,7 @@ if __package__:
     from .chat.financial_tools import FinancialToolsRequest, FinancialToolsResponse, run_financial_tools
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
+    from security.router import create_router as create_auth_router
     from api.routers.health import router as health_router
     from api.routers.categories import create_router as create_categories_router
     from api.routers.budgets import create_router as create_budgets_router
@@ -97,3 +99,4 @@ app.include_router(create_categories_router(db))
 app.include_router(create_notifications_router(db))
 
 app.include_router(create_savings_goals_router(db))
+app.include_router(create_auth_router(db))
