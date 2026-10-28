@@ -11,6 +11,12 @@ credentials.json
 *.p12
 *.pfx
 id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+.ssh/
+.aws/
+.azure/
 
 # Python environments, caches and generated files
 .venv/
@@ -38,6 +44,20 @@ coverage/
 *.sqlite3
 *.db-*
 *.bak
+*.bak.*
+*.bacpac
+*.bacpac.*
+*.bkp
+*.backup
+*.backup.*
+*.dump
+*.dump.*
+*.trn
+*.dif
+*.sql.gz
+*.sql.bz2
+*.sql.xz
+*.sql.zip
 *.log
 logs/
 
