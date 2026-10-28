@@ -12,6 +12,10 @@
         flex-direction: column
     }
 
+    .dashboard-pie {
+        width: 100%
+    }
+
     .pie-layout .legend {
         width: 100%
     }
@@ -40,6 +44,10 @@
 
     .pie-layout {
         flex-direction: row
+    }
+
+    .dashboard-pie {
+        width: 55%
     }
 }
 
@@ -87,7 +95,8 @@
     }
 
     .stats {
-        gap: 10px
+        gap: 10px;
+        grid-template-columns: 1fr
     }
 
     .stat {
@@ -113,6 +122,10 @@
 
     .pie-layout {
         flex-direction: column
+    }
+
+    .dashboard-pie {
+        width: 100%
     }
 
     .panel {

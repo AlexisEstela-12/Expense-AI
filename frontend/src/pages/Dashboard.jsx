@@ -77,7 +77,8 @@ export default function Dashboard({
           </div>
           {categoryData.length ? (
             <div className="pie-layout">
-              <ResponsiveContainer width="55%" height={265}>
+              <div className="dashboard-pie">
+              <ResponsiveContainer width="100%" height={265}>
                 <PieChart>
                   <Pie
                     data={categoryData}
@@ -97,6 +98,7 @@ export default function Dashboard({
                   <Tooltip formatter={(v) => money(v)} />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
               <div className="legend">
                 {categoryData.map((d, i) => (
                   <div key={d.name}>

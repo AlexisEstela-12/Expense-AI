@@ -14,6 +14,7 @@
 }
 
 .stat {
+    min-width: 0;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -30,11 +31,15 @@
 .stat strong {
     font-size: clamp(19px, 1.8vw, 28px);
     letter-spacing: -.7px;
-    white-space: nowrap
+    white-space: normal;
+    max-width: 100%;
+    overflow-wrap: anywhere
 }
 
 .stat small {
-    color: #6b7b90
+    color: #6b7b90;
+    max-width: 100%;
+    overflow-wrap: anywhere
 }
 
 .stat-icon {
@@ -102,6 +107,12 @@
     display: flex;
     align-items: center;
     gap: 8px
+}
+
+.dashboard-pie {
+    width: 55%;
+    min-width: min(200px, 100%);
+    flex-shrink: 0
 }
 
 .legend {
