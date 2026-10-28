@@ -45,7 +45,12 @@ select:focus-visible {
     min-height: 100vh;
     position: sticky;
     top: 0;
-    height: 100vh
+    height: 100vh;
+    overflow-y: auto
+}
+
+.sidebar > * {
+    flex-shrink: 0
 }
 
 .brand {
