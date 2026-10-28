@@ -13,8 +13,11 @@ import {
   X,
   Repeat2,
   MessageSquare,
+  LogOut,
 } from "lucide-react";
 import FinancialChat from "./components/FinancialChat.jsx";
+import AuthGate from "./components/AuthGate.jsx";
+import { logout } from "./api/auth.js";
 import Notifications from "./components/Notifications.jsx";
 import BudgetList from "./components/BudgetList.jsx";
 import MovementsTable from "./components/MovementsTable.jsx";
@@ -87,7 +90,8 @@ const menu = [
   ["Notificaciones", Bell],
   ["Asistente IA", MessageSquare],
 ];
-function App() {
+function AuthenticatedApp() {
+  const [loggingOut, setLoggingOut] = useState(false);
   const [page, setPage] = useState("Dashboard"),
     [mobile, setMobile] = useState(false),
     [month, setMonth] = useState(monthNow),
@@ -173,7 +177,6 @@ function App() {
       setNotifications(n);
       setError("");
     } catch (e) {
-      console.error("Error en load():", e);
       setError(`Error al cargar datos: ${e.message}`);
     }
   };
@@ -610,6 +613,11 @@ function App() {
           ))}
         </nav>
         <div className="side-bottom">
+          <button disabled={loggingOut} onClick={async () => {
+            setLoggingOut(true);
+            try { await logout(); } catch (failure) { setError(failure.message); }
+            finally { setLoggingOut(false); }
+          }}><LogOut size={19} /> {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}</button>
           <button onClick={() => open("Configuración")}>
             <Settings size={19} /> Configuración
           </button>
@@ -786,4 +794,6 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return <AuthGate><AuthenticatedApp /></AuthGate>;
+}

@@ -6,5 +6,6 @@ import "./styles/components.css";
 import "./styles/responsive.css";
 import "./styles/pages.css";
 import "./styles/chat.css";
+import "./styles/auth.css";
 
 createRoot(document.getElementById("root")).render(<App />);

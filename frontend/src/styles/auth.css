@@ -1,0 +1,31 @@
+.auth-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-width: none;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.auth-panel {
+    width: 100%;
+    max-width: 420px;
+    overflow-wrap: anywhere;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #214b7f;
+    font-size: 22px;
+}
+
+.auth-form {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.auth-panel button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
