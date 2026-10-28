@@ -23,9 +23,9 @@ revoked. A backend 401 means the session is already invalid and clears local sta
 ## Pending browser integration
 
 The API URL remains `http://127.0.0.1:8000`. For cross-origin browser requests from
-Vite, the backend needs explicit allowed origins **and** CORS credentials support;
-the backend currently lacks `allow_credentials=True`. Phase 5 intentionally does
-not modify it. Use the same hostname consistently (do not mix localhost and
+Vite, the backend now permits credentials for its explicit AUTH_ALLOWED_ORIGINS
+list, also used for CSRF. Development defaults to `http://127.0.0.1:5173`.
+Use the same hostname consistently (do not mix localhost and
 127.0.0.1), and development cookies require APP_ENV=development. Production Secure
 cookies require HTTPS and the appropriate same-site/same-origin deployment.
 

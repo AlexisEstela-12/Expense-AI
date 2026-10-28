@@ -21,7 +21,10 @@ be verified offline. Data contracts and financial computations are unchanged.
 
 - `APP_ENV`: `development`, `test`, or `production`.
 - `AUTH_ALLOWED_ORIGINS`: exact comma-separated origins, without paths, trailing
-  slashes, whitespace or wildcards. HTTPS is required outside development.
+  slashes, whitespace or wildcards. Defaults to `http://127.0.0.1:5173` only in
+  development. HTTPS is required outside development; production also rejects
+  loopback, unspecified/link-local IPs, localhost and .local names. No local
+  origins are automatically enabled in production. CORS and CSRF share this list.
 - `AUTH_CSRF_KEY`: a cryptographically random 32-byte key encoded in URL-safe
   Base64. Supply through runtime secrets; never commit it. Every replica must use
   the same key. Rotation invalidates existing CSRF tokens, not session cookies;
@@ -71,9 +74,10 @@ issued. Database failures are sanitized. SQL Server locking/deadlock behavior
 still needs a disposable SQL Server concurrency test; SQLite tests do not certify
 that behavior. Limit counters are not reset by successful logins.
 
-No session token, password, CSRF token or key is logged. Frontend/CORS integration
-and container packaging remain later phases. Production CORS is still the local
-policy, and the current frontend does not yet send session/CSRF credentials, so its
-private requests will be rejected. Do not expose publicly until those phases and
-SQL Server concurrency validation are complete. No real migration or account
+No session token, password, CSRF token or key is logged. CORS allows credentials
+only for the explicit origin list, GET/POST and Content-Type/X-CSRF-Token. The
+frontend sends cookies/CSRF and the image packages security/admin and inert SQL
+migration files. Use `http://127.0.0.1:5173` with the unchanged API hostname
+`127.0.0.1`, not a mixture of localhost and 127.0.0.1. Browser deployment and SQL
+Server concurrency validation remain pending. No real migration or account
 creation has been performed by the offline tests.

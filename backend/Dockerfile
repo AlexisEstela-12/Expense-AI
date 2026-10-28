@@ -60,6 +60,8 @@ COPY db/ ./db/
 COPY llm/ ./llm/
 COPY schemas/ ./schemas/
 COPY services/ ./services/
+COPY security/ ./security/
+COPY migrations/*.sql ./migrations/
 
 USER 10001:10001
 EXPOSE 8000

@@ -18,6 +18,10 @@
 !schemas/**
 !services/
 !services/**
+!security/
+!security/**/*.py
+!migrations/
+!migrations/*.sql
 
 # Defense in depth for anything under the allowed directories.
 **/.env*

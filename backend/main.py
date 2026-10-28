@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 if __package__:
     from .security.dependencies import create_authentication_dependency
-    from .security.config import documentation_options
+    from .security.config import documentation_options, cors_options
     from .security.router import create_router as create_auth_router
     from .api.routers.health import router as health_router
     from .api.routers.categories import create_router as create_categories_router
@@ -31,7 +31,7 @@ if __package__:
     from .services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 else:
     from security.dependencies import create_authentication_dependency
-    from security.config import documentation_options
+    from security.config import documentation_options, cors_options
     from security.router import create_router as create_auth_router
     from api.routers.health import router as health_router
     from api.routers.categories import create_router as create_categories_router
@@ -56,7 +56,7 @@ else:
     from services.financial_queries import get_spending_summary, get_spending_by_category, get_budget_status
 
 app = FastAPI(title='Expense AI API', version='0.1.0', **documentation_options())
-app.add_middleware(CORSMiddleware, allow_origins=['http://localhost:5173','http://127.0.0.1:5173'], allow_methods=['*'], allow_headers=['*'])
+app.add_middleware(CORSMiddleware, **cors_options())
 app.include_router(health_router)
 
 def db():

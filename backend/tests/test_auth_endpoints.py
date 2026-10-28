@@ -75,8 +75,10 @@ class AuthEndpointsTest(unittest.TestCase):
                 'headers':[(k.encode(),v.encode()) for k,v in headers.items()],
                 'client':(peer,50000),'server':('expense.test',443)},receive,send)
             start=next(m for m in messages if m['type']=='http.response.start')
-            data=json.loads(b''.join(m.get('body',b'') for m in messages if m['type']=='http.response.body'))
-            return start['status'],data,{k.decode():v.decode() for k,v in start['headers']}
+            response_body=b''.join(m.get('body',b'') for m in messages if m['type']=='http.response.body')
+            response_headers={k.decode():v.decode() for k,v in start['headers']}
+            data=json.loads(response_body) if 'application/json' in response_headers.get('content-type','') else response_body.decode()
+            return start['status'],data,response_headers
         return asyncio.run(call())
 
     def login(self, **kwargs):
