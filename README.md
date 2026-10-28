@@ -21,7 +21,8 @@ variables del proceso y sin interpolar `${...}`. Las contrasenas se conservan
 literalmente. Si utilizabas referencias `${...}`, proporciona el valor literal
 o inyectalo mediante una variable del proceso. `test` y `production` requieren
 `DB_SERVER`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` inyectadas, sin leer ese archivo
-para SQL. Esta politica no cambia todavia el proveedor IA.
+para SQL. El proveedor IA aplica la misma politica de entorno para `OPENAI_API_KEY`,
+sin exigir las variables SQL al cargar su configuracion.
 
 Terminal 2:
 ```powershell

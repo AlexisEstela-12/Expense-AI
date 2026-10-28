@@ -1,4 +1,4 @@
-"""SQL configuration loaded explicitly, never as an import side effect."""
+"""Configuration loaded explicitly, never as an import side effect."""
 from dataclasses import dataclass, field
 import os
 from pathlib import Path
@@ -37,8 +37,8 @@ class DatabaseSettings:
         )
 
 
-def load_database_settings(*, app_env: str | None = None,
-                           environ: Mapping[str, str] | None = None) -> DatabaseSettings:
+def _environment_values(*, app_env: str | None = None,
+                        environ: Mapping[str, str] | None = None):
     process = dict(os.environ if environ is None else environ)
     selected = app_env if app_env is not None else process.get('APP_ENV')
     if selected is None:
@@ -57,8 +57,23 @@ def load_database_settings(*, app_env: str | None = None,
         except Exception:
             raise ConfigurationError('No se pudo cargar la configuracion local.') from None
     values.update(process)
+    return selected, values
+
+
+def load_database_settings(*, app_env: str | None = None,
+                           environ: Mapping[str, str] | None = None) -> DatabaseSettings:
+    selected, values = _environment_values(app_env=app_env, environ=environ)
     invalid = [name for name in DB_VARIABLES
                if not isinstance(values.get(name), str) or not values[name].strip()]
     if invalid:
         raise ConfigurationError('Configuracion incompleta: ' + ', '.join(invalid) + '.')
     return DatabaseSettings(selected, *(values[name] for name in DB_VARIABLES))
+
+
+def load_openai_api_key(*, app_env: str | None = None,
+                        environ: Mapping[str, str] | None = None) -> str:
+    _, values = _environment_values(app_env=app_env, environ=environ)
+    key = values.get('OPENAI_API_KEY')
+    if not isinstance(key, str) or not key.strip():
+        raise ConfigurationError('Configuracion incompleta: OPENAI_API_KEY.')
+    return key.strip()

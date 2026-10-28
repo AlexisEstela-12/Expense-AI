@@ -77,7 +77,7 @@ class OfflineTest(unittest.TestCase):
         self.network = patch.object(socket.socket, 'connect', side_effect=AssertionError('Network forbidden'))
         self.network.start()
         self.addCleanup(self.network.stop)
-        self.dotenv = patch.object(provider, 'load_dotenv', side_effect=AssertionError('.env forbidden'))
+        self.dotenv = patch('dotenv.dotenv_values', side_effect=AssertionError('.env forbidden'))
         self.dotenv.start()
         self.addCleanup(self.dotenv.stop)
 

@@ -1,9 +1,9 @@
 """Standalone text provider. No financial services or database access."""
 
-import os
-from pathlib import Path
-
-from dotenv import load_dotenv
+if __package__.startswith('backend.'):
+    from ..core.config import load_openai_api_key
+else:
+    from core.config import load_openai_api_key
 from openai import (
     APIConnectionError,
     APITimeoutError,
@@ -36,16 +36,9 @@ def ask_llm(message: str) -> str:
         raise ValueError('El mensaje debe ser un texto no vacío.')
 
     try:
-        load_dotenv(
-            dotenv_path=Path(__file__).resolve().parents[1] / '.env',
-            override=False,
-            interpolate=False,
-        )
-        api_key = os.getenv('OPENAI_API_KEY', '').strip()
+        api_key = load_openai_api_key()
     except Exception:
         raise LLMProviderError('configuration_error') from None
-    if not api_key:
-        raise LLMProviderError('configuration_error')
 
     try:
         with OpenAI(
@@ -76,16 +69,9 @@ def ask_llm(message: str) -> str:
 def create_tool_response(*, input_items: list, instructions: str, tools: list, tool_choice: str):
     """Return Responses output items without executing any requested tool."""
     try:
-        load_dotenv(
-            dotenv_path=Path(__file__).resolve().parents[1] / '.env',
-            override=False,
-            interpolate=False,
-        )
-        api_key = os.getenv('OPENAI_API_KEY', '').strip()
+        api_key = load_openai_api_key()
     except Exception:
         raise LLMProviderError('configuration_error') from None
-    if not api_key:
-        raise LLMProviderError('configuration_error')
 
     try:
         with OpenAI(
