@@ -106,12 +106,21 @@ def current_session(session, token, key, supplied_csrf, now, *, logout=False,
         if (logout or require_csrf) and (not isinstance(supplied_csrf, str) or len(supplied_csrf) != 64 or
                        not supplied_csrf.isascii() or not hmac.compare_digest(supplied_csrf, expected_csrf)):
             raise AuthRejected(403, 'Solicitud no permitida.')
+        # Compare against the stored values inside the UPDATE: another request
+        # may already have recorded a later activity time. Such a request still
+        # authenticates, without moving either activity timestamp backwards.
+        idle_expires = case(
+            (AuthSession.idle_expires_at > now+IDLE_TIMEOUT, AuthSession.idle_expires_at),
+            else_=now+IDLE_TIMEOUT)
         values = {'revoked_at': now} if logout else {
-            'last_seen_at': now, 'idle_expires_at': min(now+IDLE_TIMEOUT, row.expires_at)}
+            'last_seen_at': case((AuthSession.last_seen_at < now, now),
+                                 else_=AuthSession.last_seen_at),
+            'idle_expires_at': case(
+                (idle_expires > AuthSession.expires_at, AuthSession.expires_at),
+                else_=idle_expires)}
         result = session.execute(update(AuthSession).where(
             AuthSession.token_hash == digest, AuthSession.revoked_at.is_(None),
-            AuthSession.expires_at > now, AuthSession.idle_expires_at > now,
-            AuthSession.last_seen_at <= now).values(**values))
+            AuthSession.expires_at > now, AuthSession.idle_expires_at > now).values(**values))
         if result.rowcount != 1:
             raise AuthRejected(401, 'Sesion no valida.')
         return {'user': {'id': user.id, 'username': user.username},
