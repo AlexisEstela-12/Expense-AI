@@ -1,7 +1,8 @@
 .financial-chat { max-width: 1000px; margin: 0 auto; }
 .financial-chat .panel-title h2 { display: flex; align-items: center; gap: 8px; }
-.chat-history { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
-.chat-message { padding: 16px; border-radius: 12px; min-width: 0; overflow-wrap: anywhere; }
+.chat-history { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; max-height: 60vh; max-height: 60dvh; overflow-y: auto; }
+.chat-history:focus-visible { outline: 3px solid #91b6ed; outline-offset: 2px; }
+.chat-message { padding: 16px; border-radius: 12px; min-width: 0; flex-shrink: 0; overflow-wrap: anywhere; }
 .chat-message > strong { font-size: 13px; color: #214b7f; }
 .chat-message-user { align-self: flex-end; max-width: 85%; background: #e3eefc; }
 .chat-message-assistant { align-self: stretch; background: #f5f8fc; border: 1px solid #e7edf5; }
@@ -19,7 +20,7 @@
 .chat-category-item { min-width: 0; }
 .chat-category-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; line-height: 1.5; }
 .chat-category-heading span { min-width: 0; overflow-wrap: anywhere; }
-.chat-category-heading strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chat-category-heading strong { font-variant-numeric: tabular-nums; white-space: normal; }
 .chat-category-track { height: 8px; margin-top: 7px; overflow: hidden; border-radius: 30px; background: #e5ebf2; }
 .chat-category-fill { display: block; height: 100%; border-radius: inherit; background: #2367b9; }
 .chat-category-card:nth-child(2) .chat-category-fill { background: #2b9b73; }
@@ -48,6 +49,12 @@
 .chat-form textarea { box-sizing: border-box; width: 100%; resize: vertical; min-height: 90px; font: inherit; padding: 12px; border: 1px solid #d8e1ee; border-radius: 8px; color: #1a2b47; background: white; }
 .chat-form textarea:focus-visible { outline: 3px solid #91b6ed; outline-offset: 2px; }
 .chat-form-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.chat-balance-card dl > div > *,
+.chat-category-heading > *,
+.chat-budget-heading > *,
+.financial-chat .panel-title > * { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.financial-chat .panel-title,
+.financial-chat .panel-title h2 { flex-wrap: wrap; }
 .financial-chat button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 650px) {
   .chat-balances { grid-template-columns: 1fr; }

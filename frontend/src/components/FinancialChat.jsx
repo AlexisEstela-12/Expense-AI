@@ -402,7 +402,7 @@ export default function FinancialChat({ api }) {
         <span>Solo lectura</span>
       </div>
       <p className="muted">Pregunta por tus saldos o los gastos de un mes. Cada consulta es independiente.</p>
-      <div className="chat-history" role="log" aria-live="polite" aria-relevant="additions">
+      <div className="chat-history" role="log" aria-label="Historial de consultas" tabIndex={0} aria-live="polite" aria-relevant="additions">
         {!messages.length && <p className="empty">Escribe tu primera pregunta o utiliza la sugerencia.</p>}
         {messages.map((message, index) => (
           <article key={index} className={`chat-message chat-message-${message.role}`}>

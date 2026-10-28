@@ -150,10 +150,19 @@
 
 .budget-top {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 10px;
     font-size: 12px;
     margin-bottom: 9px
+}
+
+.budget-top > *,
+.summary-row > *,
+.alert-item > div {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere
 }
 
 .budget-top strong {
@@ -383,6 +392,7 @@ td:last-child {
 
 .summary-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 12px;
     border-bottom: 1px solid #e9eef5;
@@ -399,6 +409,8 @@ td:last-child {
 }
 
 .balance-box {
+    min-width: 0;
+    overflow-wrap: anywhere;
     padding: 20px;
     background: #f1f6fc;
     border-radius: 9px;
