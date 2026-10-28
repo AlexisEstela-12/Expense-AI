@@ -10,8 +10,18 @@ cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+$env:APP_ENV = "development"
 uvicorn main:app --reload
 ```
+
+La configuracion SQL exige `APP_ENV=development`, `test` o `production`.
+Establece `APP_ENV` en el proceso antes de iniciar Uvicorn; no se obtiene de `.env`.
+Solo `development` permite leer opcionalmente `backend/.env`, con prioridad de las
+variables del proceso y sin interpolar `${...}`. Las contrasenas se conservan
+literalmente. Si utilizabas referencias `${...}`, proporciona el valor literal
+o inyectalo mediante una variable del proceso. `test` y `production` requieren
+`DB_SERVER`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` inyectadas, sin leer ese archivo
+para SQL. Esta politica no cambia todavia el proveedor IA.
 
 Terminal 2:
 ```powershell
